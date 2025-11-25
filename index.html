@@ -321,6 +321,7 @@
     <td id="topic3-cell" class="sts-box">
       <div class="sts-title">STS1</div>
       <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
     </td>
     <td id="topic4-cell" class="sts-box">
@@ -506,12 +507,13 @@
     client.subscribe('SLOWSTS3');
     client.subscribe('SLOWSTS4');
     client.subscribe('SLOWSTS5');
-    client.subscribe(['KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
+    client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
         // Publicar periódicamente para solicitar datos de KWH
         setInterval(() => {
           console.log("Publicando solicitud de KWH...");
+          client.publish('consultasts1', 'req');
           client.publish('consultasts2', 'req');
           client.publish('consultasts3', 'req');
           client.publish('consultasts4', 'req');
@@ -625,6 +627,7 @@
 
     // Manejo de los topics de KWH
     const kwhTopics = {
+      'KWH_STS1': 'kwh_sts1',
       'KWH_STS2': 'kwh_sts2',
       'KWH_STS3': 'kwh_sts3',
       'KWH_STS4': 'kwh_sts4',
