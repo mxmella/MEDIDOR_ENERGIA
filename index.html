@@ -64,7 +64,14 @@
       transition: color 0.4s ease;
     }
     body.dark-mode h1 {
-      color: var(--color-accent);
+      color: #fff;
+    }
+    h2 {
+      color: var(--color-primary);
+      transition: color 0.4s ease;
+    }
+    body.dark-mode h2 {
+      color: #fff;
     }
     canvas {
       background-color: #f5faff;
@@ -179,7 +186,7 @@
       transition: color 0.4s ease;
     }
     body.dark-mode #pagination {
-      color: var(--color-accent);
+      color: #fff;
     }
     #pageInfo {
       font-weight: 600;
@@ -187,7 +194,7 @@
       transition: color 0.4s ease;
     }
     body.dark-mode #pageInfo {
-      color: var(--color-accent);
+      color: #fff;
     }
 
     /* Indicador de conexión */
@@ -200,7 +207,7 @@
       transition: color 0.4s ease;
     }
     body.dark-mode #connectionStatus {
-      color: var(--color-accent);
+      color: #fff;
     }
 
     /* Toggle modo oscuro */
@@ -369,7 +376,7 @@
   <canvas id="myChart" width="900" height="450"></canvas> 
 
   <!-- Tabla de Historial de Peaks -->
-  <h2 style="text-align: center; color: var(--color-primary); margin-top: 40px;">Historial de Sobreconsumo (Peaks)</h2>
+  <h2 style="text-align: center; margin-top: 40px;">Historial de Sobreconsumo (Peaks)</h2>
   <table id="peakHistoryTable">
     <thead>
       <tr>
@@ -379,6 +386,10 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <footer style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">
+    © Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
+  </footer>
 
 <script>
   // Variables para modo oscuro persistente
@@ -682,3 +693,4 @@
 </script>
 </body>
 </html>
+
