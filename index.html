@@ -299,7 +299,7 @@
   <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
   <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
 
-  <h1>Monitoreo Energético STS</h1>
+  <h1>Medidor de energía CGE</h1>
 
   <!-- Recuadros Principales -->
   <table style="width: 100%; border-spacing: 20px; margin-bottom: -20px;">
@@ -350,7 +350,12 @@
       <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
     </td>
-    <td></td> <!-- Espacio vacío en la tercera celda para que ocupe dos filas -->
+    <td id="topic8-cell" class="sts-box" style="background-color: #28a745;">
+      <div class="sts-title">Viento</div>
+      <div id="Viento_STS1" class="sts-data" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
+      <div id="topic8" class="sts-data" style="font-size: 1.2rem; margin-top: 5px;">-- <span class="sts-unit">Nudos</span> | -- <span class="sts-unit">km/h</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </td> <!-- Espacio vacío en la tercera celda para que ocupe dos filas -->
   </tr>
 </table>
 
@@ -374,21 +379,6 @@
     </thead>
     <tbody></tbody>
   </table>
-  <div id="peakPagination" style="width: 900px; display: flex; justify-content: center; align-items: center; margin-top: 18px; user-select: none; gap: 15px;">
-    <button id="prevPeakPage" disabled title="Anterior">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <polygon points="15,6 9,12 15,18"></polygon>
-      </svg>
-    </button>
-    <span id="peakPageInfo" style="font-weight: 600; color: var(--color-primary);">Página 1 / 1</span>
-    <button id="nextPeakPage" disabled title="Siguiente">
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <polygon points="9,6 15,12 9,18"></polygon>
-      </svg>
-    </button>
-  </div>
-
-
 
 <script>
   // Variables para modo oscuro persistente
@@ -487,13 +477,15 @@
   // Alertas
   const alertContainer = document.getElementById('alertContainer');
   const peakHistoryTableBody = document.querySelector('#peakHistoryTable tbody');
-  let peakHistory = [];
   let alertActive = false;
 
   function addAlert(value, datetime) {
-    peakHistory.unshift({ datetime, value }); // Añadir al principio del array
-    renderPeakHistoryPage(1); // Ir a la primera página para ver el nuevo evento
-    updatePeakHistoryPagination();
+    // Añadir fila a la tabla de historial de peaks
+    const newRow = peakHistoryTableBody.insertRow(0); // Insertar al principio
+    const cellDate = newRow.insertCell(0);
+    const cellValue = newRow.insertCell(1);
+    cellDate.textContent = datetime;
+    cellValue.textContent = value.toFixed(2);
 
     alertContainer.style.display = 'block';
     alertContainer.textContent = `⚠️ Alerta: Valor alto detectado! Valor actual: ${value.toFixed(2)}`;
@@ -503,49 +495,6 @@
       alertContainer.style.display = 'none';
     }, 5000);
   }
-
-  // --- Lógica de Paginación para Historial de Peaks ---
-  const prevPeakPageBtn = document.getElementById('prevPeakPage');
-  const nextPeakPageBtn = document.getElementById('nextPeakPage');
-  const peakPageInfo = document.getElementById('peakPageInfo');
-  const rowsPerPeakPage = 10;
-  let currentPeakPage = 1;
-
-  function renderPeakHistoryPage(page) {
-    currentPeakPage = page;
-    peakHistoryTableBody.innerHTML = '';
-    const start = (page - 1) * rowsPerPeakPage;
-    const end = start + rowsPerPeakPage;
-    const pageData = peakHistory.slice(start, end);
-
-    for (const row of pageData) {
-      const tr = peakHistoryTableBody.insertRow();
-      const tdDate = tr.insertCell();
-      const tdValue = tr.insertCell();
-      tdDate.textContent = row.datetime;
-      tdValue.textContent = row.value.toFixed(2);
-    }
-    updatePeakHistoryPagination();
-  }
-
-  function updatePeakHistoryPagination() {
-    const totalPages = Math.max(1, Math.ceil(peakHistory.length / rowsPerPeakPage));
-    peakPageInfo.textContent = `Página ${currentPeakPage} / ${totalPages}`;
-    prevPeakPageBtn.disabled = currentPeakPage === 1;
-    nextPeakPageBtn.disabled = currentPeakPage === totalPages;
-  }
-
-  prevPeakPageBtn.addEventListener('click', () => {
-    if (currentPeakPage > 1) {
-      renderPeakHistoryPage(currentPeakPage - 1);
-    }
-  });
-
-  nextPeakPageBtn.addEventListener('click', () => {
-    if (currentPeakPage * rowsPerPeakPage < peakHistory.length) {
-      renderPeakHistoryPage(currentPeakPage + 1);
-    }
-  });
 
    // Suscripción al topic
   client.on('connect', () => {
@@ -563,6 +512,7 @@
     client.subscribe('SLOWSTS3');
     client.subscribe('SLOWSTS4');
     client.subscribe('SLOWSTS5');
+    client.subscribe('Viento_STS1');
     client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
@@ -681,6 +631,36 @@
       }
     }
 
+    // Manejo del topic Viento_STS1
+    if (topic === 'Viento_STS1') {
+      const value = parseFloat(message.toString());
+      if (!isNaN(value)) {
+        // Actualizar valor en m/s
+        document.getElementById('Viento_STS1').innerHTML = `${value.toFixed(2)} <span class="sts-unit">m/s</span>`;
+
+        // Conversiones: 1 m/s = 1.94384 nudos, 1 m/s = 3.6 km/h
+        const knots = (value * 1.94384).toFixed(2);
+        const kmh = (value * 3.6).toFixed(2);
+        document.getElementById('topic8').innerHTML = `${knots} <span class="sts-unit">Nudos</span> | ${kmh} <span class="sts-unit">km/h</span>`;
+
+        // Lógica de colores para el recuadro
+        const cell = document.getElementById('topic8-cell');
+        if (value >= 25) {
+          cell.style.backgroundColor = '#dc3545'; // Rojo
+          cell.style.color = '#fff';
+        } else if (value >= 20) {
+          cell.style.backgroundColor = '#fd7e14'; // Naranja
+          cell.style.color = '#fff';
+        } else if (value >= 18) {
+          cell.style.backgroundColor = '#ffc107'; // Amarillo
+          cell.style.color = '#333'; // Texto oscuro para contraste
+        } else {
+          cell.style.backgroundColor = '#28a745'; // Verde
+          cell.style.color = '#fff';
+        }
+      }
+    }
+
     // Manejo de los topics de KWH
     const kwhTopics = {
       'KWH_STS1': 'kwh_sts1',
@@ -702,4 +682,3 @@
 </script>
 </body>
 </html>
-
