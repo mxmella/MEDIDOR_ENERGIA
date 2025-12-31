@@ -503,8 +503,10 @@
   
   // Variables para paginación de historial
   let peakHistoryData = [];
-  const rowsPerPage = 20;
-  const maxPages = 100; 
+  let renderTimeout;
+  let lastRenderTime = 0;
+  const rowsPerPage = 10;
+  const maxPages = 150; 
   let currentPage = 1;
 
   const btnPrev = document.getElementById('btnPrev');
@@ -550,7 +552,7 @@
     // Añadir al array de datos
     peakHistoryData.unshift({ date: datetime, value: value });
     
-    // Limitar a 100 páginas (20 * 100 = 2000 registros)
+    // Limitar a 150 páginas (10 * 150 = 1500 registros)
     if (peakHistoryData.length > (rowsPerPage * maxPages)) {
       peakHistoryData.pop();
     }
@@ -792,6 +794,21 @@
           if (currentPage === 1) renderTable();
           document.getElementById('historyIndicator').textContent = `📜 Historial: Recibiendo datos (${peakHistoryData.length})`;
           document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
+
+          // Lógica híbrida: Debounce + Throttle
+          // 1. Si han pasado más de 500ms desde la última actualización, actualizamos ya (para ver progreso)
+          const now = Date.now();
+          if (now - lastRenderTime > 500) {
+            if (currentPage === 1) renderTable();
+            lastRenderTime = now;
+          } else {
+            // 2. Si no, esperamos a que haya una pausa de 200ms (para no saturar)
+            clearTimeout(renderTimeout);
+            renderTimeout = setTimeout(() => {
+              if (currentPage === 1) renderTable();
+              lastRenderTime = Date.now();
+            }, 200);
+          }
         }
       } catch (e) {
         console.error("Error al procesar el historial de peaks:", e);
@@ -818,4 +835,3 @@
 </script>
 </body>
 </html>
-
