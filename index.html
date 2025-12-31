@@ -201,6 +201,7 @@
     #connectionStatus {
       font-weight: 700;
       font-size: 1rem;
+      margin-top: 20px;
       margin-bottom: 15px;
       user-select: none;
       color: var(--color-primary);
@@ -361,7 +362,7 @@
       <div class="sts-title">Viento</div>
       <div id="Viento_STS1" class="sts-data" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
       <div id="topic8" class="sts-data" style="font-size: 1.2rem; margin-top: 5px;">-- <span class="sts-unit">Nudos</span> | -- <span class="sts-unit">km/h</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <!-- <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div> -->
     </td> <!-- Espacio vacío en la tercera celda para que ocupe dos filas -->
   </tr>
 </table>
@@ -369,6 +370,10 @@
   <!-- ------------ -->
 
   <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
+
+  <div id="dataStatus" style="text-align: center; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
+    <span id="historyIndicator" style="transition: color 0.3s;">📜 Historial: Esperando...</span>
+  </div>
 
   <!-- Alertas -->
   <div id="alertContainer">⚠️ Alerta: Valor alto detectado!</div>
@@ -386,6 +391,12 @@
     </thead>
     <tbody></tbody>
   </table>
+
+  <div id="pagination">
+    <button id="btnPrev" disabled>Anterior</button>
+    <span id="pageInfo">Página 1 de 1</span>
+    <button id="btnNext" disabled>Siguiente</button>
+  </div>
 
   <footer style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">
     © Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
@@ -489,15 +500,73 @@
   const alertContainer = document.getElementById('alertContainer');
   const peakHistoryTableBody = document.querySelector('#peakHistoryTable tbody');
   let alertActive = false;
+  
+  // Variables para paginación de historial
+  let peakHistoryData = [];
+  const rowsPerPage = 20;
+  const maxPages = 100; 
+  let currentPage = 1;
 
-  function addAlert(value, datetime) {
-    // Añadir fila a la tabla de historial de peaks
-    const newRow = peakHistoryTableBody.insertRow(0); // Insertar al principio
-    const cellDate = newRow.insertCell(0);
-    const cellValue = newRow.insertCell(1);
-    cellDate.textContent = datetime;
-    cellValue.textContent = value.toFixed(2);
+  const btnPrev = document.getElementById('btnPrev');
+  const btnNext = document.getElementById('btnNext');
+  const pageInfo = document.getElementById('pageInfo');
 
+  btnPrev.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable();
+    }
+  });
+
+  btnNext.addEventListener('click', () => {
+    const totalPages = Math.ceil(peakHistoryData.length / rowsPerPage) || 1;
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable();
+    }
+  });
+
+  function renderTable() {
+    peakHistoryTableBody.innerHTML = '';
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const pageData = peakHistoryData.slice(start, end);
+
+    pageData.forEach(item => {
+      const row = peakHistoryTableBody.insertRow();
+      const cellDate = row.insertCell(0);
+      const cellValue = row.insertCell(1);
+      cellDate.textContent = item.date;
+      cellValue.textContent = item.value.toFixed(2);
+    });
+
+    const totalPages = Math.ceil(peakHistoryData.length / rowsPerPage) || 1;
+    pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+    btnPrev.disabled = currentPage === 1;
+    btnNext.disabled = currentPage === totalPages;
+  }
+
+  function addPeakToHistory(value, datetime) {
+    // Añadir al array de datos
+    peakHistoryData.unshift({ date: datetime, value: value });
+    
+    // Limitar a 100 páginas (20 * 100 = 2000 registros)
+    if (peakHistoryData.length > (rowsPerPage * maxPages)) {
+      peakHistoryData.pop();
+    }
+
+    // Si estamos en la primera página, renderizamos para ver el nuevo dato
+    if (currentPage === 1) {
+      renderTable();
+    } else {
+      // Actualizar solo info de paginación si estamos en otra página
+      const totalPages = Math.ceil(peakHistoryData.length / rowsPerPage) || 1;
+      pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+      btnNext.disabled = currentPage === totalPages;
+    }
+  }
+
+  function showVisualAlert(value) {
     alertContainer.style.display = 'block';
     alertContainer.textContent = `⚠️ Alerta: Valor alto detectado! Valor actual: ${value.toFixed(2)}`;
 
@@ -524,6 +593,8 @@
     client.subscribe('SLOWSTS4');
     client.subscribe('SLOWSTS5');
     client.subscribe('Viento_STS1');
+    client.subscribe('REGISTRO_PEAK');
+    client.subscribe('HISTORIAL_PEAKS'); // Suscripción para recibir el historial
     client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
@@ -536,6 +607,11 @@
           client.publish('consultasts4', 'req');
           client.publish('consultasts5', 'req');
         }, 5000); // Consulta cada 5 segundos
+
+        // Solicitar el historial de peaks al conectar (para cargar datos del turno)
+        client.publish('CONSULTA_PEAKS', 'req');
+        document.getElementById('historyIndicator').textContent = "📜 Historial: Solicitando...";
+        document.getElementById('historyIndicator').style.color = "#fd7e14"; // Naranja
       }
     });
   });
@@ -565,10 +641,14 @@
         // Actualizamos el recuadro de MEDIDOR_CGE (topic1)
         document.getElementById('topic1').innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
 
-        // Alerta ejemplo: valor > 80
-        if(value > 80) {
+        // Alerta ejemplo: valor > 120
+        if(value > 120) {
           alertActive = true;
-          addAlert(value, fullDate);
+          showVisualAlert(value); 
+          addPeakToHistory(value, fullDate); // Agregamos inmediatamente a la tabla local
+          // Enviar datos por MQTT para registro en CSV/Base de datos
+          const payload = JSON.stringify({ date: fullDate, value: value });
+          client.publish('REGISTRO_PEAK', payload);
         } else {
           alertActive = false;
           alertContainer.style.display = 'none';
@@ -688,6 +768,51 @@
         const topicName = topic.replace('KWH_', ''); // Extrae STS3, STS4, etc.
         document.getElementById(elementId).innerHTML = `${value.toFixed(2)} <span class="sts-unit">kWh</span>`;
       }
+    }
+
+    // Manejo de la recepción del historial de peaks (desde CSV/Base de datos)
+    if (topic === 'HISTORIAL_PEAKS') {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Caso 1: Array completo (Carga inicial o masiva)
+        if (Array.isArray(data)) {
+          // Actualizamos la variable local con los datos recibidos del servidor
+          peakHistoryData = data;
+          renderTable(); // Refrescamos la tabla visualmente
+          document.getElementById('historyIndicator').textContent = `📜 Historial: Cargado (${peakHistoryData.length} reg.)`;
+          document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
+        } 
+        // Caso 2: Registro individual (Formato col1, col2, col3)
+        else if (data.col1 && data.col2 && data.col3) {
+          const fullDate = `${data.col1} ${data.col2}`;
+          const value = parseFloat(data.col3);
+          peakHistoryData.push({ date: fullDate, value: value });
+          
+          if (currentPage === 1) renderTable();
+          document.getElementById('historyIndicator').textContent = `📜 Historial: Recibiendo datos (${peakHistoryData.length})`;
+          document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
+        }
+      } catch (e) {
+        console.error("Error al procesar el historial de peaks:", e);
+      }
+    }
+
+    // Manejo de nuevo peak registrado (tiempo real)
+    if (topic === 'REGISTRO_PEAK') {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data.date && data.value) {
+          // Evitar duplicados: Si el último peak registrado es igual al que llega, lo ignoramos
+          if (peakHistoryData.length > 0) {
+            const lastPeak = peakHistoryData[0];
+            if (lastPeak.date === data.date && Math.abs(lastPeak.value - data.value) < 0.01) {
+              return; 
+            }
+          }
+          addPeakToHistory(data.value, data.date);
+        }
+      } catch (e) { console.error(e); }
     }
   });
 </script>
