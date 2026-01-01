@@ -22,6 +22,7 @@
       --color-accent: #ffc72c;
       --color-table-header-bg-light: var(--color-primary);
       --color-table-header-bg-dark: #144372;
+      --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     body {
@@ -41,24 +42,18 @@
       color: var(--color-text-dark);
     }
     #logo-fijo {
-      position: fixed;
-      top: 15px;
-      left: 15px;
-      width: 150px;
+      width: 120px;
       height: auto;
-      z-index: 1000;
-      filter: drop-shadow(0 0 5px rgba(0,0,0,0.1));
       transition: filter 0.4s ease;
     }
     body.dark-mode #logo-fijo {
       filter: drop-shadow(0 0 8px rgba(255, 199, 44, 0.9));
     }
     h1 {
-      margin-top: 0;
-      margin-bottom: 15px;
+      margin: 0;
       color: var(--color-primary);
       font-weight: 700;
-      font-size: 2.5rem;
+      font-size: 2rem;
       text-align: center;
       user-select: none;
       transition: color 0.4s ease;
@@ -125,7 +120,7 @@
       fill: currentColor;
       user-select: none;
     }
-    table {
+    #peakHistoryTable {
       width: 900px;
       border-collapse: separate;
       border-spacing: 0 8px;
@@ -137,7 +132,7 @@
       background: #fafcff;
       transition: background-color 0.4s ease, color 0.4s ease;
     }
-    body.dark-mode table {
+    body.dark-mode #peakHistoryTable {
       background: #10375c;
       color: var(--color-text-dark);
       box-shadow: 0 0 25px rgba(255, 199, 44, 0.4);
@@ -213,9 +208,6 @@
 
     /* Toggle modo oscuro */
     #darkModeToggle {
-      position: fixed;
-      top: 15px;
-      right: 15px;
       background: var(--color-primary);
       color: #fff;
       border: none;
@@ -223,10 +215,8 @@
       border-radius: 8px;
       cursor: pointer;
       font-weight: 600;
-      box-shadow: 0 0 10px rgba(10, 61, 102, 0.4);
       transition: background-color 0.3s ease;
       user-select: none;
-      z-index: 1100;
     }
     #darkModeToggle:hover {
       background-color: var(--color-primary-light);
@@ -272,24 +262,37 @@
 
     /* Estilos para los recuadros de STS */
     .sts-box {
-      border: 2px solid #0a72c1;
-      padding: 15px;
+      padding: 20px;
       background-color: #76acdf;
       text-align: center;
-      border-radius: 8px;
+      border-radius: 16px;
       color: #fff;
-      transition: background-color 0.3s ease;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 140px;
+    }
+    .sts-box:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     }
     .sts-title {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.9;
       font-weight: bold;
       margin-bottom: 10px;
       color: #0a3d66;
     }
     .sts-data {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: bold;
       line-height: 1.2;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     .sts-unit { font-size: 1rem; font-weight: normal; margin-left: 5px; }
     .slow-down-legend {
@@ -301,71 +304,95 @@
       padding: 4px;
       border-radius: 4px;
     }
+
+    /* Layout Grid */
+    .main-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 40px;
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: var(--shadow-card);
+    }
+    body.dark-mode .main-header {
+      background: rgba(11, 30, 61, 0.5);
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      margin-bottom: 30px;
+    }
+    .dashboard-grid.main-metrics {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
   </style>
 </head>
 <body>
-  <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
-  <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
-
-  <h1>Medidor de energía CGE</h1>
+  <header class="main-header">
+    <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
+    <h1>Medidor de energía CGE</h1>
+    <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
+  </header>
 
   <!-- Recuadros Principales -->
-  <table style="width: 100%; border-spacing: 20px; margin-bottom: -20px;">
-    <tr>
-      <td id="topic1-cell" class="sts-box">
-        <div class="sts-title">Medidor CGE</div>
-        <div id="topic1" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      </td>
-      <td id="topic2-cell" class="sts-box">
-        <div class="sts-title">Consumo Grúas</div>
-        <div id="topic2" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      </td>
-    </tr>
-  </table>
-  
-   <!-- Nuevos topics I_STS1, I_STS2, I_STS3, I_STS4, I_STS5 -->
-  <table style="width: 100%; border-spacing: 20px;">
-  <tr>
-    <td id="topic3-cell" class="sts-box">
-      <div class="sts-title">STS1</div>
-      <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-    </td>
-    <td id="topic4-cell" class="sts-box">
-      <div class="sts-title">STS2</div>
-      <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-    </td>
-    <td id="topic5-cell" class="sts-box">
-      <div class="sts-title">STS3</div>
-      <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-    </td>
-  </tr>
-  <tr>
-    <td id="topic6-cell" class="sts-box">
-      <div class="sts-title">STS4</div>
-      <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-    </td>
-    <td id="topic7-cell" class="sts-box">
-      <div class="sts-title">STS5</div>
-      <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-      <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
-      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-    </td>
-    <td id="topic8-cell" class="sts-box" style="background-color: #28a745;">
+  <div class="dashboard-grid main-metrics">
+    <div id="topic1-cell" class="sts-box" style="background: linear-gradient(135deg, #0a72c1, #0a3d66);">
+      <div class="sts-title" style="color: #fff;">Medidor CGE</div>
+      <div id="topic1" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+    </div>
+    <div id="topic2-cell" class="sts-box" style="background: linear-gradient(135deg, #ffc72c, #e0a800);">
+      <div class="sts-title" style="color: #fff;">Consumo Grúas</div>
+      <div id="topic2" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+    </div>
+    <div id="topic8-cell" class="sts-box" style="background-color: #28a745;">
       <div class="sts-title">Viento</div>
       <div id="Viento_STS1" class="sts-data" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
       <div id="topic8" class="sts-data" style="font-size: 1.2rem; margin-top: 5px;">-- <span class="sts-unit">Nudos</span> | -- <span class="sts-unit">km/h</span></div>
       <!-- <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div> -->
-    </td> <!-- Espacio vacío en la tercera celda para que ocupe dos filas -->
-  </tr>
-</table>
+    </div>
+  </div>
+  
+   <!-- Nuevos topics I_STS1, I_STS2, I_STS3, I_STS4, I_STS5 -->
+  <div class="dashboard-grid">
+    <div id="topic3-cell" class="sts-box">
+      <div class="sts-title">STS1</div>
+      <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </div>
+    <div id="topic4-cell" class="sts-box">
+      <div class="sts-title">STS2</div>
+      <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </div>
+    <div id="topic5-cell" class="sts-box">
+      <div class="sts-title">STS3</div>
+      <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </div>
+    <div id="topic6-cell" class="sts-box">
+      <div class="sts-title">STS4</div>
+      <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </div>
+    <div id="topic7-cell" class="sts-box">
+      <div class="sts-title">STS5</div>
+      <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+      <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+    </div>
+  </div>
 
   <!-- ------------ -->
 
@@ -645,12 +672,15 @@
 
         // Alerta ejemplo: valor > 120
         if(value > 120) {
-          alertActive = true;
-          showVisualAlert(value); 
-          addPeakToHistory(value, fullDate); // Agregamos inmediatamente a la tabla local
-          // Enviar datos por MQTT para registro en CSV/Base de datos
-          const payload = JSON.stringify({ date: fullDate, value: value });
-          client.publish('REGISTRO_PEAK', payload);
+          // Solo registrar si NO estaba activa la alerta previamente (Flanco de subida)
+          if (!alertActive) {
+            alertActive = true;
+            showVisualAlert(value); 
+            addPeakToHistory(value, fullDate); // Agregamos inmediatamente a la tabla local
+            // Enviar datos por MQTT para registro en CSV/Base de datos
+            const payload = JSON.stringify({ date: fullDate, value: value });
+            client.publish('REGISTRO_PEAK', payload);
+          }
         } else {
           alertActive = false;
           alertContainer.style.display = 'none';
@@ -789,6 +819,11 @@
         else if (data.col1 && data.col2 && data.col3) {
           const fullDate = `${data.col1} ${data.col2}`;
           const value = parseFloat(data.col3);
+          
+          // Evitar duplicados al recibir historial (verifica si ya existe en la lista)
+          const isDuplicate = peakHistoryData.some(item => item.date === fullDate && Math.abs(item.value - value) < 0.01);
+          if (isDuplicate) return;
+
           peakHistoryData.push({ date: fullDate, value: value });
           
           if (currentPage === 1) renderTable();
