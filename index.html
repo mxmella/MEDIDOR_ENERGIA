@@ -352,6 +352,11 @@
       <div class="sts-title" style="color: #fff;">Consumo Grúas</div>
       <div id="topic2" class="sts-data">-- <span class="sts-unit">Amp</span></div>
     </div>
+    <div id="last-peak-cell" class="sts-box" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+      <div class="sts-title" style="color: #fff;">Último Peak</div>
+      <div id="lastPeakValue" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+      <div id="lastPeakDate" class="sts-data" style="font-size: 1.1rem; margin-top: 5px; font-weight: 400;">--</div>
+    </div>
     <div id="topic8-cell" class="sts-box" style="background-color: #28a745;">
       <div class="sts-title">Viento</div>
       <div id="Viento_STS1" class="sts-data" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
@@ -367,30 +372,35 @@
       <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <div id="last_slow_sts1" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
     </div>
     <div id="topic4-cell" class="sts-box">
       <div class="sts-title">STS2</div>
       <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <div id="last_slow_sts2" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
     </div>
     <div id="topic5-cell" class="sts-box">
       <div class="sts-title">STS3</div>
       <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <div id="last_slow_sts3" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
     </div>
     <div id="topic6-cell" class="sts-box">
       <div class="sts-title">STS4</div>
       <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <div id="last_slow_sts4" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
     </div>
     <div id="topic7-cell" class="sts-box">
       <div class="sts-title">STS5</div>
       <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
+      <div id="last_slow_sts5" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
     </div>
   </div>
 
@@ -575,6 +585,14 @@
     btnNext.disabled = currentPage === totalPages;
   }
 
+  function updateLastPeakWidget() {
+    if (peakHistoryData.length > 0) {
+      const latest = peakHistoryData[0]; // El primero es el más reciente
+      document.getElementById('lastPeakValue').innerHTML = `${latest.value.toFixed(2)} <span class="sts-unit">Amp</span>`;
+      document.getElementById('lastPeakDate').textContent = latest.date;
+    }
+  }
+
   function addPeakToHistory(value, datetime) {
     // Añadir al array de datos
     peakHistoryData.unshift({ date: datetime, value: value });
@@ -593,6 +611,9 @@
       pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
       btnNext.disabled = currentPage === totalPages;
     }
+
+    // Actualizar el widget del último peak
+    updateLastPeakWidget();
   }
 
   function showVisualAlert(value) {
@@ -623,6 +644,7 @@
     client.subscribe('SLOWSTS5');
     client.subscribe('Viento_STS1');
     client.subscribe('REGISTRO_PEAK');
+    client.subscribe('RESPUESTA_SLOWSTS'); // Suscripción para recibir info de último slow down
     client.subscribe('HISTORIAL_PEAKS'); // Suscripción para recibir el historial
     client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
@@ -641,6 +663,9 @@
         client.publish('CONSULTA_PEAKS', 'req');
         document.getElementById('historyIndicator').textContent = "📜 Historial: Solicitando...";
         document.getElementById('historyIndicator').style.color = "#fd7e14"; // Naranja
+
+        // Solicitar información del último Slow Down
+        client.publish('CONSULTA_SLOWSTS', 'req');
       }
     });
   });
@@ -748,10 +773,33 @@
       if (isSlow) {
         cell.style.backgroundColor = '#ff4c4c'; // Rojo
         legend.style.display = 'block';
+        // Solicitar actualización inmediata del último slow down
+        client.publish('CONSULTA_SLOWSTS', 'req');
       } else {
         cell.style.backgroundColor = '#76acdf'; // Azul por defecto
         legend.style.display = 'none';
       }
+    }
+
+    // Manejo de RESPUESTA_SLOWSTS (Último Slow Down)
+    if (topic === 'RESPUESTA_SLOWSTS') {
+      try {
+        // Formato esperado: {"ultimo_slowdown":"SLOWSTS4","fecha_hora":"01-01-2026, 21:13:41","status_plc":"OK"}
+        const data = JSON.parse(message.toString());
+        
+        const craneMap = {
+          'SLOWSTS1': 'last_slow_sts1',
+          'SLOWSTS2': 'last_slow_sts2',
+          'SLOWSTS3': 'last_slow_sts3',
+          'SLOWSTS4': 'last_slow_sts4',
+          'SLOWSTS5': 'last_slow_sts5'
+        };
+
+        const elementId = craneMap[data.ultimo_slowdown];
+        if (elementId && data.fecha_hora) {
+          document.getElementById(elementId).innerHTML = `Último Slow:<br>${data.fecha_hora}`;
+        }
+      } catch (e) { console.error("Error procesando respuesta slow sts:", e); }
     }
 
     // Manejo del topic Viento_STS1
@@ -814,6 +862,7 @@
           renderTable(); // Refrescamos la tabla visualmente
           document.getElementById('historyIndicator').textContent = `📜 Historial: Cargado (${peakHistoryData.length} reg.)`;
           document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
+          updateLastPeakWidget(); // Actualizar widget
         } 
         // Caso 2: Registro individual (Formato col1, col2, col3)
         else if (data.col1 && data.col2 && data.col3) {
@@ -824,9 +873,10 @@
           const isDuplicate = peakHistoryData.some(item => item.date === fullDate && Math.abs(item.value - value) < 0.01);
           if (isDuplicate) return;
 
-          peakHistoryData.push({ date: fullDate, value: value });
+          peakHistoryData.unshift({ date: fullDate, value: value });
           
           if (currentPage === 1) renderTable();
+          updateLastPeakWidget(); // Actualizar widget
           document.getElementById('historyIndicator').textContent = `📜 Historial: Recibiendo datos (${peakHistoryData.length})`;
           document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
 
