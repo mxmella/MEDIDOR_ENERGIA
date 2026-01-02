@@ -230,6 +230,23 @@
       background-color: #f4c320;
     }
 
+    /* Botón de Informe - Estilos mejorados */
+    #reportBtn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    }
+    #reportBtn:hover {
+      background-color: #218838; /* Verde más oscuro al pasar el mouse */
+      transform: translateY(-2px); /* Efecto de elevación */
+      box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4); /* Sombra suave */
+    }
+
     /* Alertas */
     #alertContainer {
       display:none; max-width:900px; margin: 0 auto 20px; padding:10px; border-radius:6px;
@@ -307,8 +324,8 @@
 
     /* Layout Grid */
     .main-header {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
       width: 100%;
       max-width: 1100px;
@@ -318,6 +335,9 @@
       backdrop-filter: blur(10px);
       border-radius: 20px;
       box-shadow: var(--shadow-card);
+    }
+    .main-header > :last-child {
+      justify-self: end;
     }
     body.dark-mode .main-header {
       background: rgba(11, 30, 61, 0.5);
@@ -333,13 +353,127 @@
     .dashboard-grid.main-metrics {
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     }
+
+    /* Estilos para impresión (Generación de Informe) */
+    @media print {
+      @page { margin: 0.5cm; size: landscape; }
+      body {
+        background-color: #fff !important;
+        color: #000 !important;
+        padding: 0 !important;
+      }
+      .main-header {
+        box-shadow: none !important;
+        background: none !important;
+        border-bottom: 2px solid #0a3d66;
+        margin-bottom: 20px;
+      }
+      /* Mostrar fecha de reporte solo en impresión */
+      .print-only {
+        display: block !important;
+        font-size: 0.9rem;
+        margin-top: 5px;
+      }
+      /* Ocultar botones y elementos de navegación */
+      #darkModeToggle, #reportBtn, #pagination, #connectionStatus, #dataStatus, #btnPrev, #btnNext, #alertContainer {
+        display: none !important;
+      }
+
+      /* 1. Forzar que todas las tarjetas queden en la primera hoja */
+      .dashboard-grid {
+        margin-bottom: 10px !important;
+        gap: 10px !important;
+      }
+      /* Forzar 4 columnas para la primera fila (Métricas principales) */
+      .dashboard-grid.main-metrics {
+        grid-template-columns: repeat(4, 1fr) !important;
+      }
+      /* Forzar 5 columnas para la segunda fila (Grúas STS) */
+      .dashboard-grid:nth-of-type(2) {
+        grid-template-columns: repeat(5, 1fr) !important;
+      }
+
+      /* Reducir tamaño de tarjetas para impresión */
+      .sts-box {
+        min-height: 80px !important;
+        padding: 10px !important;
+      }
+      .sts-data {
+        font-size: 1.4rem !important;
+      }
+
+      /* Ajustar gráficas y tablas */
+      canvas {
+        display: none !important;
+      }
+      .sts-box {
+        break-inside: avoid;
+        page-break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #eee;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      #peakHistoryTable {
+        box-shadow: none !important;
+        border: 1px solid #ccc;
+        width: 100%;
+        border-collapse: collapse !important; /* Tabla compacta tipo Excel */
+        border-spacing: 0 !important;
+      }
+      #peakHistoryTable th, #peakHistoryTable td {
+        border: 1px solid #000 !important; /* Bordes negros finos */
+        padding: 8px !important;
+        color: #000 !important;
+      }
+      #peakHistoryTable th {
+        background-color: #f0f0f0 !important; /* Encabezado gris claro */
+      }
+      footer {
+        position: static !important;
+        margin-top: auto !important;
+      }
+      #print-page-one {
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+        page-break-after: always;
+      }
+      #print-page-two {
+        min-height: 98vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .print-footer-page1 {
+        display: block !important;
+        text-align: center;
+        margin-top: auto;
+        padding-bottom: 10px;
+        font-size: 0.9rem;
+        opacity: 0.8;
+      }
+    }
+
+    .print-only {
+      display: none;
+    }
+    .print-footer-page1 {
+      display: none;
+    }
   </style>
 </head>
 <body>
+  <div id="print-page-one">
   <header class="main-header">
     <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
-    <h1>Medidor de energía CGE</h1>
-    <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
+    <div style="text-align: center;">
+      <h1>Medidor de energía CGE</h1>
+      <div id="reportTimestamp" class="print-only"></div>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button id="reportBtn">📄 Informe</button>
+      <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
+    </div>
   </header>
 
   <!-- Recuadros Principales -->
@@ -404,7 +538,13 @@
     </div>
   </div>
 
+  <div class="print-footer-page1">
+    © Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
+  </div>
+  </div>
+
   <!-- ------------ -->
+  <div id="print-page-two">
 
   <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
 
@@ -438,6 +578,7 @@
   <footer style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">
     © Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
   </footer>
+  </div>
 
 <script>
   // Variables para modo oscuro persistente
@@ -458,6 +599,27 @@
       darkToggle.textContent = 'Modo oscuro';
       localStorage.setItem('theme', 'light');
     }
+  });
+
+  // Botón para generar informe (Imprimir / PDF)
+  document.getElementById('reportBtn').addEventListener('click', () => {
+    // Guardar configuración actual
+    const originalRows = rowsPerPage;
+    // Cambiar a 50 filas para el reporte
+    rowsPerPage = 50;
+    
+    // Agregar fecha y hora al reporte
+    document.getElementById('reportTimestamp').textContent = `Generado el: ${new Date().toLocaleString()}`;
+
+    renderTable();
+    
+    // Imprimir y luego restaurar
+    setTimeout(() => {
+      window.print();
+      // Restaurar a 10 filas
+      rowsPerPage = originalRows;
+      renderTable();
+    }, 500);
   });
 
   // MQTT y Chart.js con Zoom plugin
@@ -542,7 +704,7 @@
   let peakHistoryData = [];
   let renderTimeout;
   let lastRenderTime = 0;
-  const rowsPerPage = 10;
+  let rowsPerPage = 10;
   const maxPages = 150; 
   let currentPage = 1;
 
@@ -920,3 +1082,4 @@
 </script>
 </body>
 </html>
+
