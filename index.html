@@ -76,7 +76,7 @@
       display: block;
       margin: 0 auto 25px auto;
       width: 100% !important;
-      max-width: 900px;
+      max-width: 1600px;
       height: auto !important;
       transition: background-color 0.4s ease;
     }
@@ -124,7 +124,7 @@
     }
     #peakHistoryTable {
       width: 100%;
-      max-width: 900px;
+      max-width: 1600px;
       border-collapse: separate;
       border-spacing: 0 8px;
       color: var(--color-text-light);
@@ -173,7 +173,7 @@
     }
     #pagination {
       width: 100%;
-      max-width: 900px;
+      max-width: 1600px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -257,12 +257,12 @@
 
     /* Alertas */
     #alertContainer {
-      display:none; max-width:900px; margin: 0 auto 20px; padding:10px; border-radius:6px;
+      display:none; max-width:1600px; margin: 0 auto 20px; padding:10px; border-radius:6px;
       background:#ff4c4c; color:#fff; font-weight:bold; text-align:center; font-size:1.2rem;
       user-select:none; box-shadow: 0 0 15px rgba(255,0,0,0.5);
     }
     #alertHistory {
-      display:none; max-width:900px; margin: 0 auto 30px; background:#faf0f0; border:1px solid #ff4c4c;
+      display:none; max-width:1600px; margin: 0 auto 30px; background:#faf0f0; border:1px solid #ff4c4c;
       border-radius:6px; padding:10px; max-height: 150px; overflow-y: auto;
       font-family: monospace; font-size: 0.9rem; color:#900;
     }
@@ -336,7 +336,7 @@
       grid-template-columns: auto 1fr auto;
       align-items: center;
       width: 100%;
-      max-width: 1100px;
+      max-width: 1600px;
       margin-bottom: 25px;
       padding: 10px 15px;
       background: rgba(255,255,255,0.5);
@@ -355,7 +355,7 @@
       grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 12px;
       width: 100%;
-      max-width: 1100px;
+      max-width: 1600px;
       margin-bottom: 30px;
     }
     .dashboard-grid.main-metrics {
@@ -364,20 +364,64 @@
 
     /* Media Queries para móviles y tablets */
     @media (max-width: 768px) {
-      body { padding: 15px 10px; }
-      h1 { font-size: 1.3rem; }
-      #logo-fijo { width: 80px; }
-      .sts-box { padding: 12px; min-height: 110px; }
-      .sts-title { font-size: 0.9rem; }
-      .sts-data { font-size: 1.5rem; }
-      .sts-unit { font-size: 0.8rem; }
-      #connectionStatus { font-size: 0.85rem; }
-      button { margin: 0 4px; padding: 6px 10px; font-size: 0.85rem; }
+      body { padding: 15px 5px; }
+      h1 { font-size: 1.2rem; }
+      h2 { font-size: 1rem; }
+      #logo-fijo { width: 70px; }
+
+      .dashboard-grid { gap: 8px; }
+      .dashboard-grid, .dashboard-grid.main-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+
+      .sts-box { padding: 10px; min-height: 100px; border-radius: 12px; }
+      .sts-title { font-size: 0.8rem; margin-bottom: 5px; }
+      .sts-data { font-size: 1.4rem; }
+      .sts-unit { font-size: 0.75rem; }
+      .last-slow-info { font-size: 0.7rem; padding: 4px 6px; margin-top: 8px; }
+
+      #connectionStatus { font-size: 0.8rem; }
+      button { margin: 0 2px; padding: 6px 8px; font-size: 0.8rem; }
       .main-header {
         grid-template-columns: auto 1fr auto;
-        gap: 8px;
-        padding: 8px 12px;
+        gap: 10px;
+        padding: 8px 10px;
+        margin-bottom: 20px;
       }
+
+      /* Table adjustments */
+      .table-container {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      body.dark-mode .table-container { border-color: var(--color-primary-light); }
+      #peakHistoryTable { white-space: nowrap; }
+      th, td { padding: 10px 15px; }
+      #pagination { gap: 5px; }
+
+      footer { font-size: 0.8rem; margin-top: 30px; }
+    }
+    
+    /* Estilo para el recuadro de información de Slow Down */
+    .last-slow-info {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 6px 10px;
+      border-radius: 8px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-sizing: border-box;
+      display: none;
+    }
+
+    .table-container {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
     }
 
     /* Estilos para impresión (Generación de Informe) */
@@ -533,35 +577,35 @@
       <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts1" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts1" class="last-slow-info"></div>
     </div>
     <div id="topic4-cell" class="sts-box">
       <div class="sts-title">STS2</div>
       <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts2" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts2" class="last-slow-info"></div>
     </div>
     <div id="topic5-cell" class="sts-box">
       <div class="sts-title">STS3</div>
       <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts3" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts3" class="last-slow-info"></div>
     </div>
     <div id="topic6-cell" class="sts-box">
       <div class="sts-title">STS4</div>
       <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts4" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts4" class="last-slow-info"></div>
     </div>
     <div id="topic7-cell" class="sts-box">
       <div class="sts-title">STS5</div>
       <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts5" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts5" class="last-slow-info"></div>
     </div>
   </div>
 
@@ -573,26 +617,35 @@
   <!-- ------------ -->
   <div id="print-page-two">
 
-  <div id="dataStatus" style="text-align: center; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
-    <span id="historyIndicator" style="transition: color 0.3s;">📜 Historial: Esperando...</span>
-  </div>
-
   <!-- Alertas -->
   <div id="alertContainer">⚠️ Alerta: Valor alto detectado!</div>
 
   <canvas id="myChart" width="900" height="450"></canvas> 
+  
+  <h2 style="text-align: center; margin-top: 30px;">Gráfico Historial de Peaks</h2>
+  <canvas id="peakChart" width="900" height="450"></canvas>
 
   <!-- Tabla de Historial de Peaks -->
-  <h2 style="text-align: center; margin-top: 40px;">Historial de Sobreconsumo (Peaks)</h2>
-  <table id="peakHistoryTable">
-    <thead>
-      <tr>
-        <th scope="col">Fecha y Hora</th>
-        <th scope="col">Valor del Peak (Amp)</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div style="text-align: center; margin-top: 40px; margin-bottom: 15px;">
+    <h2 style="margin: 0 0 5px 0;">Historial de Sobreconsumo (Peaks)</h2>
+    <div id="dataStatus" style="font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
+      <span id="historyIndicator" style="transition: color 0.3s;">📜 Historial: Esperando...</span>
+    </div>
+    <div id="historyDateRange" style="font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: none;">
+      Muestreo desde <strong id="firstDate">--</strong> hasta <strong id="lastDate">--</strong>
+    </div>
+  </div>
+  <div class="table-container">
+    <table id="peakHistoryTable">
+      <thead>
+        <tr>
+          <th scope="col">Fecha y Hora</th>
+          <th scope="col">Valor del Peak (Amp)</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <div id="pagination">
     <button id="btnPrev" disabled>Anterior</button>
@@ -719,6 +772,38 @@
     }
   };
   const myChart = new Chart(ctx, config);
+  
+  // Configuración del Gráfico de Peaks
+  const ctxPeak = document.getElementById('peakChart').getContext('2d');
+  const peakChart = new Chart(ctxPeak, {
+    type: 'line',
+    data: {
+      labels: [],
+      datasets: [{
+        label: 'Valor del Peak (Amp)',
+        data: [],
+        borderColor: '#dc3545',
+        backgroundColor: 'rgba(220, 53, 69, 0.2)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          labels: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 14, weight: 'bold' } }
+        }
+      },
+      scales: {
+        x: { display: false }, // Ocultar etiquetas X para limpieza visual
+        y: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66' } }
+      }
+    }
+  });
 
   // Alertas
   const alertContainer = document.getElementById('alertContainer');
@@ -780,6 +865,29 @@
     }
   }
 
+  function updatePeakChart() {
+    // Invertimos los datos para que el gráfico muestre de más antiguo a más nuevo
+    const chartData = [...peakHistoryData].reverse();
+    peakChart.data.labels = chartData.map(d => d.date);
+    peakChart.data.datasets[0].data = chartData.map(d => d.value);
+    peakChart.update();
+  }
+
+  function updateHistoryDateRange() {
+    const dateRangeEl = document.getElementById('historyDateRange');
+    if (peakHistoryData.length > 1) {
+      // peakHistoryData está ordenado con el más nuevo en el índice 0 (por unshift)
+      const newestDate = peakHistoryData[0].date;
+      const oldestDate = peakHistoryData[peakHistoryData.length - 1].date;
+      
+      document.getElementById('firstDate').textContent = oldestDate;
+      document.getElementById('lastDate').textContent = newestDate;
+      dateRangeEl.style.display = 'block';
+    } else {
+      dateRangeEl.style.display = 'none';
+    }
+  }
+
   function addPeakToHistory(value, datetime) {
     // Añadir al array de datos
     peakHistoryData.unshift({ date: datetime, value: value });
@@ -801,6 +909,8 @@
 
     // Actualizar el widget del último peak
     updateLastPeakWidget();
+    updatePeakChart();
+    updateHistoryDateRange();
   }
 
   function showVisualAlert(value) {
@@ -976,7 +1086,7 @@
     if (topic === 'RESPUESTA_SLOWSTS') {
       try {
         // Formato esperado: {"ultimo_slowdown":"SLOWSTS4","fecha_hora":"01-01-2026, 21:13:41","status_plc":"OK"}
-        const data = JSON.parse(message.toString());
+        const responseData = JSON.parse(message.toString());
         
         const craneMap = {
           'SLOWSTS1': 'last_slow_sts1',
@@ -986,9 +1096,11 @@
           'SLOWSTS5': 'last_slow_sts5'
         };
 
-        const elementId = craneMap[data.ultimo_slowdown];
-        if (elementId && data.fecha_hora) {
-          document.getElementById(elementId).innerHTML = `Último Slow:<br>${data.fecha_hora}`;
+        const elementId = craneMap[responseData.ultimo_slowdown];
+        if (elementId && responseData.fecha_hora) {
+          const el = document.getElementById(elementId);
+          el.innerHTML = `Último Slow:<br>${responseData.fecha_hora}`;
+          el.style.display = 'block';
         }
       } catch (e) { console.error("Error procesando respuesta slow sts:", e); }
     }
@@ -1036,7 +1148,6 @@
       const value = parseFloat(message.toString());
       if (!isNaN(value)) {
         const elementId = kwhTopics[topic];
-        const topicName = topic.replace('KWH_', ''); // Extrae STS3, STS4, etc.
         document.getElementById(elementId).innerHTML = `${value.toFixed(2)} <span class="sts-unit">kWh</span>`;
       }
     }
@@ -1044,21 +1155,23 @@
     // Manejo de la recepción del historial de peaks (desde CSV/Base de datos)
     if (topic === 'HISTORIAL_PEAKS') {
       try {
-        const data = JSON.parse(message.toString());
+        const historyData = JSON.parse(message.toString());
         
         // Caso 1: Array completo (Carga inicial o masiva)
-        if (Array.isArray(data)) {
+        if (Array.isArray(historyData)) {
           // Actualizamos la variable local con los datos recibidos del servidor
-          peakHistoryData = data;
+          peakHistoryData = historyData;
           renderTable(); // Refrescamos la tabla visualmente
           document.getElementById('historyIndicator').textContent = `📜 Historial: Cargado (${peakHistoryData.length} reg.)`;
           document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
           updateLastPeakWidget(); // Actualizar widget
+          updatePeakChart();
+          updateHistoryDateRange();
         } 
         // Caso 2: Registro individual (Formato col1, col2, col3)
-        else if (data.col1 && data.col2 && data.col3) {
-          const fullDate = `${data.col1} ${data.col2}`;
-          const value = parseFloat(data.col3);
+        else if (historyData.col1 && historyData.col2 && historyData.col3) {
+          const fullDate = `${historyData.col1} ${historyData.col2}`;
+          const value = parseFloat(historyData.col3);
           
           // Evitar duplicados al recibir historial (verifica si ya existe en la lista)
           const isDuplicate = peakHistoryData.some(item => item.date === fullDate && Math.abs(item.value - value) < 0.01);
@@ -1076,12 +1189,16 @@
           const now = Date.now();
           if (now - lastRenderTime > 500) {
             if (currentPage === 1) renderTable();
+            updatePeakChart();
+            updateHistoryDateRange();
             lastRenderTime = now;
           } else {
             // 2. Si no, esperamos a que haya una pausa de 200ms (para no saturar)
             clearTimeout(renderTimeout);
             renderTimeout = setTimeout(() => {
               if (currentPage === 1) renderTable();
+              updatePeakChart();
+              updateHistoryDateRange();
               lastRenderTime = Date.now();
             }, 200);
           }
@@ -1094,16 +1211,16 @@
     // Manejo de nuevo peak registrado (tiempo real)
     if (topic === 'REGISTRO_PEAK') {
       try {
-        const data = JSON.parse(message.toString());
-        if (data.date && data.value) {
+        const peakData = JSON.parse(message.toString());
+        if (peakData.date && peakData.value) {
           // Evitar duplicados: Si el último peak registrado es igual al que llega, lo ignoramos
           if (peakHistoryData.length > 0) {
             const lastPeak = peakHistoryData[0];
-            if (lastPeak.date === data.date && Math.abs(lastPeak.value - data.value) < 0.01) {
+            if (lastPeak.date === peakData.date && Math.abs(lastPeak.value - peakData.value) < 0.01) {
               return; 
             }
           }
-          addPeakToHistory(data.value, data.date);
+          addPeakToHistory(peakData.value, peakData.date);
         }
       } catch (e) { console.error(e); }
     }
