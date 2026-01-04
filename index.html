@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Medidor de energía CGE</title>
 
   <!-- Chart.js + Zoom Plugin -->
@@ -74,8 +75,9 @@
       box-shadow: 0 0 15px rgba(10, 61, 102, 0.2);
       display: block;
       margin: 0 auto 25px auto;
-      width: 900px !important;
-      height: 450px !important;
+      width: 100% !important;
+      max-width: 900px;
+      height: auto !important;
       transition: background-color 0.4s ease;
     }
     body.dark-mode canvas {
@@ -121,7 +123,8 @@
       user-select: none;
     }
     #peakHistoryTable {
-      width: 900px;
+      width: 100%;
+      max-width: 900px;
       border-collapse: separate;
       border-spacing: 0 8px;
       color: var(--color-text-light);
@@ -169,7 +172,8 @@
       border-bottom: none;
     }
     #pagination {
-      width: 900px;
+      width: 100%;
+      max-width: 900px;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -196,8 +200,8 @@
     #connectionStatus {
       font-weight: 700;
       font-size: 1rem;
-      margin-top: 20px;
-      margin-bottom: 15px;
+      margin-top: 5px;
+      margin-bottom: 5px;
       user-select: none;
       color: var(--color-primary);
       transition: color 0.4s ease;
@@ -205,6 +209,10 @@
     body.dark-mode #connectionStatus {
       color: #fff;
     }
+    /* Clases para colores de estado */
+    .status-connected { color: #28a745 !important; }
+    .status-disconnected { color: #dc3545 !important; }
+    .status-reconnecting { color: #ffc107 !important; }
 
     /* Toggle modo oscuro */
     #darkModeToggle {
@@ -468,6 +476,7 @@
     <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
     <div style="text-align: center;">
       <h1>Medidor de energía CGE</h1>
+      <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
       <div id="reportTimestamp" class="print-only"></div>
     </div>
     <div style="display: flex; gap: 10px;">
@@ -545,8 +554,6 @@
 
   <!-- ------------ -->
   <div id="print-page-two">
-
-  <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
 
   <div id="dataStatus" style="text-align: center; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
     <span id="historyIndicator" style="transition: color 0.3s;">📜 Historial: Esperando...</span>
@@ -792,6 +799,7 @@
   client.on('connect', () => {
     console.log('Conectado al broker MQTT');
     connText.textContent = 'Conectado';
+    connText.className = 'status-connected';
     client.subscribe('MEDIDOR_CGE');
     client.subscribe('I_MAX_GRUAS');  // Suscripción al topic I_MAX_GRUAS
     client.subscribe('I_STS1');
@@ -835,15 +843,18 @@
    
   client.on('reconnect', () => {
     connText.textContent = 'Reconectando...';
+    connText.className = 'status-reconnecting';
   });
 
   client.on('close', () => {
     connText.textContent = 'Desconectado';
+    connText.className = 'status-disconnected';
   });
 
   client.on('error', (err) => {
     console.error('Error MQTT:', err);
     connText.textContent = 'Error de conexión';
+    connText.className = 'status-disconnected';
   });
 
   client.on('message', (topic, message) => {
