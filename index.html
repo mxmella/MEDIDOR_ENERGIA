@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Medidor de energía CGE</title>
 
   <!-- Chart.js + Zoom Plugin -->
@@ -200,8 +199,8 @@
     #connectionStatus {
       font-weight: 700;
       font-size: 1rem;
-      margin-top: 5px;
-      margin-bottom: 5px;
+      margin-top: 20px;
+      margin-bottom: 15px;
       user-select: none;
       color: var(--color-primary);
       transition: color 0.4s ease;
@@ -365,6 +364,7 @@
         background-color: #fff !important;
         color: #000 !important;
         padding: 0 !important;
+        display: block !important; /* Asegura el comportamiento correcto de los bloques en impresión */
       }
       .main-header {
         box-shadow: none !important;
@@ -444,15 +444,18 @@
         page-break-after: always;
       }
       #print-page-two {
-        min-height: 98vh;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
+        justify-content: space-between; /* Fuerza al footer a irse al final */
       }
       .print-footer-page1 {
         display: block !important;
         text-align: center;
         margin-top: auto;
         padding-bottom: 10px;
+        margin-top: 50px;
+        page-break-after: always;
         font-size: 0.9rem;
         opacity: 0.8;
       }
@@ -472,7 +475,6 @@
     <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
     <div style="text-align: center;">
       <h1>Medidor de energía CGE</h1>
-      <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
       <div id="reportTimestamp" class="print-only"></div>
     </div>
     <div style="display: flex; gap: 10px;">
@@ -551,6 +553,9 @@
   <!-- ------------ -->
   <div id="print-page-two">
 
+  <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%;">
+  <div id="connectionStatus">Estado: <span id="connText">Desconectado</span></div>
+
   <div id="dataStatus" style="text-align: center; margin-bottom: 20px; font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
     <span id="historyIndicator" style="transition: color 0.3s;">📜 Historial: Esperando...</span>
   </div>
@@ -576,6 +581,7 @@
     <button id="btnPrev" disabled>Anterior</button>
     <span id="pageInfo">Página 1 de 1</span>
     <button id="btnNext" disabled>Siguiente</button>
+  </div>
   </div>
 
   <footer style="text-align: center; margin-top: 50px; margin-bottom: 20px; font-size: 0.9rem; opacity: 0.8;">
@@ -1085,5 +1091,6 @@
 </script>
 </body>
 </html>
+
 
 
