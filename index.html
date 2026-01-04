@@ -26,11 +26,6 @@
       --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
-    /* IMPORTANTE: Reset para que el padding no desborde las cajas en móviles */
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       background-color: var(--color-bg-light);
       color: var(--color-text-light);
@@ -214,10 +209,6 @@
     body.dark-mode #connectionStatus {
       color: #fff;
     }
-    /* Clases para colores de estado */
-    .status-connected { color: #28a745 !important; }
-    .status-disconnected { color: #dc3545 !important; }
-    .status-reconnecting { color: #ffc107 !important; }
 
     /* Toggle modo oscuro */
     #darkModeToggle {
@@ -472,51 +463,6 @@
     }
     .print-footer-page1 {
       display: none;
-    }
-
-    /* Ajustes específicos para móviles para evitar recortes y superposiciones */
-    @media (max-width: 600px) {
-      body {
-        padding: 5px; /* Reducir padding del cuerpo para ganar espacio lateral */
-      }
-      .main-header {
-        display: flex;
-        flex-direction: column;
-        padding: 15px 10px;
-        margin-bottom: 25px;
-        gap: 10px;
-      }
-      #logo-fijo {
-        width: 80px; /* Logo más compacto */
-      }
-      h1 {
-        font-size: 1.2rem;
-      }
-      .dashboard-grid {
-        /* Forzar 2 columnas exactas para mantener orden y evitar desbordes */
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-      .sts-box {
-        padding: 8px;
-        min-height: auto; /* Altura automática para ajustarse al contenido */
-      }
-      .sts-data {
-        font-size: 1.1rem; /* Fuente reducida para que quepan los números */
-        word-break: break-word; /* Evitar que números largos corten la tarjeta */
-      }
-      .sts-title {
-        font-size: 0.8rem;
-        margin-bottom: 5px;
-      }
-      .sts-unit {
-        font-size: 0.75rem;
-      }
-      /* Centrar botones en móvil */
-      .main-header > div:last-child {
-        width: 100%;
-        justify-content: center;
-      }
     }
   </style>
 </head>
@@ -849,7 +795,6 @@
   client.on('connect', () => {
     console.log('Conectado al broker MQTT');
     connText.textContent = 'Conectado';
-    connText.className = 'status-connected';
     client.subscribe('MEDIDOR_CGE');
     client.subscribe('I_MAX_GRUAS');  // Suscripción al topic I_MAX_GRUAS
     client.subscribe('I_STS1');
@@ -893,18 +838,15 @@
    
   client.on('reconnect', () => {
     connText.textContent = 'Reconectando...';
-    connText.className = 'status-reconnecting';
   });
 
   client.on('close', () => {
     connText.textContent = 'Desconectado';
-    connText.className = 'status-disconnected';
   });
 
   client.on('error', (err) => {
     console.error('Error MQTT:', err);
     connText.textContent = 'Error de conexión';
-    connText.className = 'status-disconnected';
   });
 
   client.on('message', (topic, message) => {
@@ -1143,4 +1085,5 @@
 </script>
 </body>
 </html>
+
 
