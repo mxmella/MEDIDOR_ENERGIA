@@ -468,6 +468,46 @@
     .print-footer-page1 {
       display: none;
     }
+
+    /* Ajustes específicos para móviles para evitar recortes y superposiciones */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      .main-header {
+        display: flex;
+        flex-direction: column;
+        padding: 15px 10px;
+        margin-bottom: 25px;
+        gap: 10px;
+      }
+      #logo-fijo {
+        width: 100px; /* Logo más pequeño en móvil */
+      }
+      h1 {
+        font-size: 1.4rem;
+      }
+      .dashboard-grid {
+        /* Permite columnas más estrechas (135px) para que quepan bien en vertical */
+        grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+        gap: 10px;
+      }
+      .sts-box {
+        padding: 12px;
+        min-height: 110px; /* Altura más compacta */
+      }
+      .sts-data {
+        font-size: 1.4rem; /* Texto de datos más pequeño */
+      }
+      .sts-title {
+        font-size: 0.9rem;
+      }
+      /* Centrar botones en móvil */
+      .main-header > div:last-child {
+        width: 100%;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1093,5 +1133,4 @@
 </script>
 </body>
 </html>
-
 
