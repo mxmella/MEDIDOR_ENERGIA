@@ -380,11 +380,20 @@
       #connectionStatus { font-size: 0.8rem; }
       button { margin: 0 2px; padding: 6px 8px; font-size: 0.8rem; }
       .main-header {
-        grid-template-columns: auto 1fr auto;
-        gap: 10px;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "title title"
+          "logo buttons";
+        gap: 15px;
         padding: 8px 10px;
         margin-bottom: 20px;
       }
+      .main-header > img#logo-fijo {
+        grid-area: logo;
+        justify-self: start;
+      }
+      .main-header > div:nth-of-type(1) { grid-area: title; }
+      .main-header > div:nth-of-type(2) { grid-area: buttons; justify-self: end; }
 
       /* Table adjustments */
       .table-container {
