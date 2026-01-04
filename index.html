@@ -47,9 +47,6 @@
       height: auto;
       transition: filter 0.4s ease;
     }
-    body.dark-mode #logo-fijo {
-      filter: drop-shadow(0 0 8px rgba(255, 199, 44, 0.9));
-    }
     h1 {
       margin: 0;
       color: var(--color-primary);
@@ -365,18 +362,18 @@
     /* Media Queries para móviles y tablets */
     @media (max-width: 768px) {
       body { padding: 15px 5px; }
-      h1 { font-size: 1.2rem; }
+      h1 { font-size: 1.3rem; }
       h2 { font-size: 1rem; }
       #logo-fijo { width: 70px; }
 
       .dashboard-grid { gap: 8px; }
       .dashboard-grid, .dashboard-grid.main-metrics {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        grid-template-columns: repeat(2, 1fr); /* Forzar 2 columnas para un layout más limpio y legible */
       }
 
       .sts-box { padding: 10px; min-height: 100px; border-radius: 12px; }
       .sts-title { font-size: 0.8rem; margin-bottom: 5px; }
-      .sts-data { font-size: 1.4rem; }
+      .sts-data { font-size: 1.3rem; }
       .sts-unit { font-size: 0.75rem; }
       .last-slow-info { font-size: 0.7rem; padding: 4px 6px; margin-top: 8px; }
 
@@ -445,7 +442,7 @@
         margin-top: 5px;
       }
       /* Ocultar botones y elementos de navegación */
-      #darkModeToggle, #reportBtn, #pagination, #connectionStatus, #dataStatus, #btnPrev, #btnNext, #alertContainer {
+      #darkModeToggle, #reportBtn, #pagination, #connectionStatus, #dataStatus, #btnPrev, #btnNext, #alertContainer, #peakChartTitle {
         display: none !important;
       }
 
@@ -622,7 +619,7 @@
 
   <canvas id="myChart" width="900" height="450"></canvas> 
   
-  <h2 style="text-align: center; margin-top: 30px;">Gráfico Historial de Peaks</h2>
+  <h2 id="peakChartTitle" style="text-align: center; margin-top: 30px;">Gráfico Historial de Peaks</h2>
   <canvas id="peakChart" width="900" height="450"></canvas>
 
   <!-- Tabla de Historial de Peaks -->
