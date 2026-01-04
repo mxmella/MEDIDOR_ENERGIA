@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Medidor de energía CGE</title>
 
   <!-- Chart.js + Zoom Plugin -->
@@ -324,6 +325,16 @@
       padding: 4px;
       border-radius: 4px;
     }
+    .last-slow-info {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 6px 12px;
+      border-radius: 8px;
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-sizing: border-box;
+    }
 
     /* Layout Grid */
     .main-header {
@@ -345,6 +356,18 @@
     body.dark-mode .main-header {
       background: rgba(11, 30, 61, 0.5);
     }
+
+    /* Responsividad para móviles */
+    @media (max-width: 768px) {
+      .main-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+      }
+      h1 { font-size: 1.5rem; }
+    }
+
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -513,35 +536,35 @@
       <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts1" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts1" class="last-slow-info"></div>
     </div>
     <div id="topic4-cell" class="sts-box">
       <div class="sts-title">STS2</div>
       <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts2" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts2" class="last-slow-info"></div>
     </div>
     <div id="topic5-cell" class="sts-box">
       <div class="sts-title">STS3</div>
       <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts3" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts3" class="last-slow-info"></div>
     </div>
     <div id="topic6-cell" class="sts-box">
       <div class="sts-title">STS4</div>
       <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts4" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts4" class="last-slow-info"></div>
     </div>
     <div id="topic7-cell" class="sts-box">
       <div class="sts-title">STS5</div>
       <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
       <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
-      <div id="last_slow_sts5" style="font-size: 0.8rem; margin-top: 8px; opacity: 0.9; font-weight: 400;"></div>
+      <div id="last_slow_sts5" class="last-slow-info"></div>
     </div>
   </div>
 
