@@ -333,12 +333,12 @@
     /* Layout Grid */
     .main-header {
       display: grid;
-      grid-template-columns: 1fr auto 1fr;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       width: 100%;
       max-width: 1100px;
-      margin-bottom: 40px;
-      padding: 10px 20px;
+      margin-bottom: 25px;
+      padding: 10px 15px;
       background: rgba(255,255,255,0.5);
       backdrop-filter: blur(10px);
       border-radius: 20px;
@@ -352,14 +352,32 @@
     }
     .dashboard-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
       width: 100%;
       max-width: 1100px;
       margin-bottom: 30px;
     }
     .dashboard-grid.main-metrics {
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    /* Media Queries para móviles y tablets */
+    @media (max-width: 768px) {
+      body { padding: 15px 10px; }
+      h1 { font-size: 1.3rem; }
+      #logo-fijo { width: 80px; }
+      .sts-box { padding: 12px; min-height: 110px; }
+      .sts-title { font-size: 0.9rem; }
+      .sts-data { font-size: 1.5rem; }
+      .sts-unit { font-size: 0.8rem; }
+      #connectionStatus { font-size: 0.85rem; }
+      button { margin: 0 4px; padding: 6px 10px; font-size: 0.85rem; }
+      .main-header {
+        grid-template-columns: auto 1fr auto;
+        gap: 8px;
+        padding: 8px 12px;
+      }
     }
 
     /* Estilos para impresión (Generación de Informe) */
@@ -1093,6 +1111,5 @@
 </script>
 </body>
 </html>
-
 
 
