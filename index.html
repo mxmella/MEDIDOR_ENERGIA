@@ -502,7 +502,7 @@
         margin-top: 5px;
       }
       /* Ocultar botones y elementos de navegación */
-      #darkModeToggle, #reportBtn, #pagination, #connectionStatus, #dataStatus, #btnPrev, #btnNext, #alertContainer, #peakChartTitle {
+      #darkModeToggle, #reportBtn, #vesselBtn, .btn-history, #pagination, #connectionStatus, #dataStatus, #btnPrev, #btnNext, #alertContainer {
         display: none !important;
       }
 
@@ -531,7 +531,10 @@
 
       /* Ajustar gráficas y tablas */
       canvas {
-        display: none !important;
+        display: block !important;
+        max-width: 100% !important;
+        height: auto !important;
+        break-inside: avoid;
       }
       .sts-box {
         break-inside: avoid;
@@ -578,6 +581,61 @@
         padding-bottom: 10px;
         font-size: 0.9rem;
         opacity: 0.8;
+      }
+
+      /* Estilos para imprimir solo el modal KWH */
+      body.printing-modal > *:not(#kwhModal) { display: none !important; }
+      body.printing-modal #kwhModal {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        background: #fff !important;
+        overflow: visible !important;
+      }
+      body.printing-modal #kwhModal .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body.printing-modal .close-modal,
+      body.printing-modal .btn-export,
+      body.printing-modal #kwhPagination {
+        display: none !important;
+      }
+      body.printing-modal .table-container {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      body.printing-modal #kwhReportTimestamp {
+        display: block !important;
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+        color: #333;
+      }
+      .print-footer-kwh {
+        display: block !important;
+      }
+      .print-header-kwh {
+        display: flex !important;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #0a3d66;
+        padding-bottom: 15px;
+      }
+      .print-header-kwh img {
+        width: 100px;
+        height: auto;
+      }
+      .print-header-kwh h1 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #0a3d66;
+        font-weight: 700;
       }
     }
 
@@ -1108,11 +1166,16 @@
   <!-- Modal para Historial KWH -->
   <div id="kwhModal" class="modal">
     <div class="modal-content">
+      <div class="print-header-kwh" style="display: none;">
+        <img src="logo puerto.png" alt="Logo">
+        <h1>Sistema de Gestión Energética</h1>
+      </div>
       <span class="close-modal" onclick="closeHistory()">&times;</span>
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
         <h2 id="modalTitle" style="margin: 0;">Historial KWH</h2>
-        <button class="btn-export" onclick="exportKwhToCsv()">💾 Exportar Excel</button>
+        <button class="btn-export" onclick="printKwhReport()">📄 Generar Informe</button>
       </div>
+      <div id="kwhReportTimestamp" class="print-only" style="margin-bottom: 10px;"></div>
       
       <div class="charts-wrapper">
         <div class="chart-container-modal"><canvas id="kwhShiftChart"></canvas></div>
@@ -1137,6 +1200,9 @@
         <button id="btnKwhPrev" disabled>Anterior</button>
         <span id="pageKwhInfo">Página 1 de 1</span>
         <button id="btnKwhNext" disabled>Siguiente</button>
+      </div>
+      <div class="print-footer-kwh" style="display: none; text-align: center; margin-top: 30px; font-size: 0.8rem; border-top: 1px solid #ddd; padding-top: 10px;">
+        © Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
       </div>
     </div>
   </div>
@@ -1414,7 +1480,8 @@
   // Variables para paginación KWH
   let kwhData = [];
   let currentKwhPage = 1;
-  const kwhRowsPerPage = 3; // Mostrar 3 turnos por página
+
+    let kwhRowsPerPage = 3; // Mostrar 3 turnos por página
 
   // Listeners para paginación KWH
   document.getElementById('btnKwhPrev').addEventListener('click', () => {
@@ -1711,6 +1778,30 @@
         }
       }
     });
+  }
+
+  function printKwhReport() {
+    const originalRows = kwhRowsPerPage;
+    const originalPage = currentKwhPage;
+    
+    // Mostrar todo para el reporte
+    // kwhRowsPerPage = kwhData.length || 1; // Comentado para mantener solo los 3 turnos en el reporte
+    currentKwhPage = 1;
+    
+    // Timestamp
+    const tsEl = document.getElementById('kwhReportTimestamp');
+    if(tsEl) tsEl.textContent = `Generado el: ${new Date().toLocaleString()}`;
+    
+    document.body.classList.add('printing-modal');
+    renderKwhTable();
+    
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('printing-modal');
+      kwhRowsPerPage = originalRows;
+      currentKwhPage = originalPage;
+      renderKwhTable();
+    }, 500);
   }
 
   function exportKwhToCsv() {
@@ -2300,66 +2391,13 @@
           peakHistoryData.unshift({ date: fullDate, value: value });
           
           if (currentPage === 1) renderTable();
-          updateLastPeakWidget(); // Actualizar widget
-          document.getElementById('historyIndicator').textContent = `📜 Historial: Recibiendo datos (${peakHistoryData.length})`;
-          document.getElementById('historyIndicator').style.color = "#28a745"; // Verde
-
-          // Lógica híbrida: Debounce + Throttle
-          // 1. Si han pasado más de 500ms desde la última actualización, actualizamos ya (para ver progreso)
-          const now = Date.now();
-          if (now - lastRenderTime > 500) {
-            if (currentPage === 1) renderTable();
-            updatePeakChart();
-            updateHistoryDateRange();
-            lastRenderTime = now;
-          } else {
-            // 2. Si no, esperamos a que haya una pausa de 200ms (para no saturar)
-            clearTimeout(renderTimeout);
-            renderTimeout = setTimeout(() => {
-              if (currentPage === 1) renderTable();
-              updatePeakChart();
-              updateHistoryDateRange();
-              lastRenderTime = Date.now();
-            }, 200);
-          }
+          
+          updateLastPeakWidget();
+          updatePeakChart();
+          updateHistoryDateRange();
         }
-      } catch (e) {
-        console.error("Error al procesar el historial de peaks:", e);
-      }
+      } catch (e) { console.error("Error procesando historial peaks:", e); }
     }
-
-    // Manejo de nuevo peak registrado (tiempo real)
-    if (topic === 'REGISTRO_PEAK') {
-      try {
-        const peakData = JSON.parse(message.toString());
-        if (peakData.date && peakData.value) {
-          // Evitar duplicados: Si el último peak registrado es igual al que llega, lo ignoramos
-          if (peakHistoryData.length > 0) {
-            const lastPeak = peakHistoryData[0];
-            if (lastPeak.date === peakData.date && Math.abs(lastPeak.value - peakData.value) < 0.01) {
-              return; 
-            }
-          }
-          addPeakToHistory(peakData.value, peakData.date);
-        }
-      } catch (e) { console.error(e); }
-    }
-  });
-
-  // Inicializar fechas del análisis de buque al cargar
-  window.addEventListener('DOMContentLoaded', () => {
-    const now = new Date();
-    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-    
-    const toLocalIso = (d) => {
-      const offset = d.getTimezoneOffset() * 60000;
-      return new Date(d.getTime() - offset).toISOString().slice(0, 16);
-    };
-    
-    const vStart = document.getElementById('vesselStart');
-    const vEnd = document.getElementById('vesselEnd');
-    if(vStart && !vStart.value) vStart.value = toLocalIso(yesterday);
-    if(vEnd && !vEnd.value) vEnd.value = toLocalIso(now);
   });
 </script>
 </body>
