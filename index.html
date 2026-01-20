@@ -68,6 +68,13 @@
     body.dark-mode h2 {
       color: var(--color-text-dark);
     }
+    h3 {
+      color: var(--color-primary);
+      transition: color 0.4s ease;
+    }
+    body.dark-mode h3 {
+      color: var(--color-text-dark);
+    }
     canvas {
       background-color: #f5faff;
       border-radius: 12px;
@@ -1021,6 +1028,58 @@
       color: #fcd34d;
       border-color: #78350f;
     }
+
+    /* Estilos para la tabla de análisis en el modal CGE */
+    .analysis-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.85rem;
+    }
+    .analysis-table th, .analysis-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+    }
+    .analysis-table th {
+      background-color: rgba(10, 61, 102, 0.05);
+      color: var(--color-primary);
+      font-weight: 700;
+    }
+    body.dark-mode .analysis-table th {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--color-text-dark);
+      border-bottom-color: #334155;
+    }
+    body.dark-mode .analysis-table td {
+      border-bottom-color: #334155;
+      color: #e2e8f0;
+    }
+    .fp-verification {
+      background-color: #e6fffa;
+      border: 1px solid #b2f5ea;
+      color: #234e52;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      font-size: 0.9rem;
+    }
+    .chart-container-modal {
+      position: relative;
+      height: 350px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 12px;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid rgba(0,0,0,0.05);
+    }
+    body.dark-mode .chart-container-modal { background: rgba(0, 0, 0, 0.2); border-color: rgba(255,255,255,0.05); }
+    body.dark-mode .fp-verification {
+      background-color: rgba(6, 78, 59, 0.4);
+      border-color: #065f46;
+      color: #d1fae5;
+    }
   </style>
 </head>
 <body>
@@ -1043,7 +1102,7 @@
 
   <!-- Recuadros Principales -->
   <div class="dashboard-grid main-metrics">
-    <div id="topic1-cell" class="sts-box" style="background: linear-gradient(135deg, #0a72c1, #0a3d66);">
+    <div id="topic1-cell" class="sts-box" style="background: linear-gradient(135deg, #0a72c1, #0a3d66); cursor: pointer;" onclick="openCgeModal()">
       <!-- Icono Rayo -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
       <div class="sts-title" style="color: #fff;">Medidor CGE</div>
@@ -1051,6 +1110,7 @@
       <div id="topic1Content" style="display: none;">
         <div id="topic1" class="sts-data">-- <span class="sts-unit">Amp</span></div>
       </div>
+      <div style="font-size: 0.75rem; margin-top: 8px; opacity: 0.9; border: 1px solid rgba(255,255,255,0.4); padding: 2px 8px; border-radius: 10px; display: inline-block;">👆 Ver Detalles</div>
     </div>
     <div id="topic2-cell" class="sts-box" style="background: linear-gradient(135deg, #ffc72c, #e0a800);">
       <!-- Icono Actividad/Pulso -->
@@ -1149,6 +1209,117 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts5" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(5)">📊 Ver Historial KWH</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Detalles Medidor CGE -->
+  <div id="cgeModal" class="modal">
+    <div class="modal-content" style="max-width: 1600px; padding: 0; border: none; border-radius: 12px;">
+      <div class="modal-header-custom">
+        <h2><span>⚡</span> Detalles Medidor CGE</h2>
+        <span class="close-modal" onclick="closeCgeModal()" style="color: #fff; opacity: 0.8; float: none;">&times;</span>
+      </div>
+      <div class="modal-body-custom">
+        <div class="dashboard-grid" style="max-width: 100%;">
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Corriente Total</div>
+              <div id="val_CGE_AMP" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Amperaje Instantáneo</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje Promedio L-L</div>
+              <div id="val_VOLT_L_L_AVG" class="sts-data">-- <span class="sts-unit">kV</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Media Tensión</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Potencia Activa Total</div>
+              <div id="val_ACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kW</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Active Power (Real)</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Potencia Reactiva Total</div>
+              <div id="val_REACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kVAR</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Reactive Power</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Potencia Aparente Total</div>
+              <div id="val_APARENTE_TOTAL" class="sts-data">-- <span class="sts-unit">kVA</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Apparent Power (Total)</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Factor de Potencia</div>
+              <div id="val_FACTOR_POTENCIA" class="sts-data">--</div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Eficiencia (kW / kVA)</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Desbalance Voltaje L-N</div>
+              <div id="val_VOLT_UB_L_N_WOR" class="sts-data">-- <span class="sts-unit">%</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Volt Unbalance Worst</div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Desbalance Corriente (Worst)</div>
+              <div id="val_CU_UN_WOR" class="sts-data">-- <span class="sts-unit">%</span></div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Current Unbalance</div>
+           </div>
+        </div>
+
+        <!-- Gráficos de Tendencia -->
+        <h3 style="margin-top: 30px; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            📈 Tendencias de Calidad de Energía
+        </h3>
+        
+        <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; max-width: 100%;">
+            <div class="chart-container-modal">
+                <canvas id="cgePowerChart"></canvas>
+            </div>
+            <div class="chart-container-modal">
+                <canvas id="cgeUnbalanceChart"></canvas>
+            </div>
+        </div>
+        <div class="chart-container-modal">
+            <canvas id="cgeVoltageChart"></canvas>
+        </div>
+
+        <!-- Sección de Análisis y Guía -->
+        <h3 style="margin-top: 30px; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+            📚 Guía de Análisis y Unidades
+        </h3>
+        
+        <div style="overflow-x: auto;">
+          <table class="analysis-table">
+            <thead>
+              <tr>
+                <th>Variable</th>
+                <th>Unidad</th>
+                <th>Interpretación / Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>Voltaje Promedio L-L</strong></td><td>Kilovoltios (kV)</td><td>Operando en Media Tensión (Rango de 15kV).</td></tr>
+              <tr><td><strong>Potencia Activa Total</strong></td><td>Kilovatios (kW)</td><td>Es el consumo real que factura la compañía.</td></tr>
+              <tr><td><strong>Potencia Reactiva Total</strong></td><td>kVAR</td><td>Energía necesaria para magnetización (motores/transf.).</td></tr>
+              <tr><td><strong>Potencia Aparente Total</strong></td><td>kVA</td><td>Carga total que soporta tu cableado y transformador.</td></tr>
+              <tr><td><strong>Factor de Potencia</strong></td><td>Adimensional</td><td>Excelente si &gt; 0.93 (1.0 es ideal). Evita multas.</td></tr>
+              <tr><td><strong>Desbalance Corriente</strong></td><td>Porcentaje (%)</td><td>Muy bajo (&lt; 2%). Cargas perfectamente distribuidas.</td></tr>
+              <tr><td><strong>Desbalance Voltaje</strong></td><td>Porcentaje (%)</td><td>Suministro de red muy estable.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fp-verification">
+          <div style="font-weight: bold; margin-bottom: 8px; font-size: 1rem;">✅ Verificación del Factor de Potencia ($FP$)</div>
+          <div style="margin-bottom: 8px;">El cálculo que realiza el sistema es:</div>
+          <div style="font-family: monospace; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 6px; display: inline-block; margin-bottom: 8px; font-weight: bold;">
+             $$FP = \frac{P (kW)}{S (kVA)}$$
+          </div>
+          <div style="font-size: 0.95em; opacity: 0.95; line-height: 1.5;">
+             Ejemplo con tus datos: <br>
+             475.71 kW / 478.43 kVA = <strong>0.994</strong> <br>
+             <em>Este valor es ideal. Generalmente, cualquier valor por encima de 0.93 evita multas por energía reactiva, y tú estás prácticamente en el tope de eficiencia.</em>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1381,7 +1552,14 @@
   // MQTT y Chart.js con Zoom plugin
   const client = mqtt.connect('wss://mqtt-dashboard.com:8884/mqtt');
   const ctx = document.getElementById('myChart').getContext('2d');
-  const connText = document.getElementById('connText');
+  
+  // Variables globales para cálculo de FP
+  let cgeActivePower = 0;
+  let cgeApparentPower = 0;
+  // Variables para gráficos de tendencia CGE
+  let cgeCurrentAmp = 0;
+  let cgeCurrentUnbalance = 0;
+  let cgeVoltageAvg = 0;
 
   // Variables para Watchdog (Monitor de flujo de datos)
   let lastDataTime = Date.now();
@@ -1389,19 +1567,17 @@
 
   // Verificar flujo de datos periódicamente
   setInterval(() => {
-    const statusEl = document.getElementById('connectionStatus');
-    const textEl = document.getElementById('connText');
+    const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
+    const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
     
     // Solo si el cliente MQTT está conectado, verificamos si llegan datos
     if (client && client.connected) {
       if (Date.now() - lastDataTime > DATA_TIMEOUT) {
-        if (statusEl.className !== 'status-warning') {
-          statusEl.className = 'status-warning';
-          textEl.textContent = 'Sin flujo de datos';
-        }
-      } else if (statusEl.className === 'status-warning') {
-        statusEl.className = 'status-connected';
-        textEl.textContent = 'Conectado';
+        statusEls.forEach(el => { if(el) el.className = 'status-warning'; });
+        textEls.forEach(el => { if(el) el.textContent = 'Sin flujo de datos'; });
+      } else if (statusEls[0] && statusEls[0].className === 'status-warning') {
+        statusEls.forEach(el => { if(el) el.className = 'status-connected'; });
+        textEls.forEach(el => { if(el) el.textContent = 'Conectado'; });
       }
     }
   }, 2000);
@@ -1766,6 +1942,124 @@
     });
   }
 
+  function openCgeModal() {
+    document.getElementById('cgeModal').style.display = 'block';
+  }
+
+  function closeCgeModal() {
+    document.getElementById('cgeModal').style.display = 'none';
+  }
+
+  // --- Inicialización de Gráficos CGE (Tendencias) ---
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false,
+    elements: { point: { radius: 0, hitRadius: 10 } }, // Ocultar puntos para mejor rendimiento
+    scales: { x: { display: false } }, // Ocultar eje X para limpieza (es tiempo real)
+    plugins: { legend: { labels: { boxWidth: 10, font: { size: 10 } } } }
+  };
+
+  // 1. Triángulo de Potencias (Eficiencia)
+  const ctxPower = document.getElementById('cgePowerChart').getContext('2d');
+  const cgePowerChart = new Chart(ctxPower, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'Potencia Activa (kW)', data: [], borderColor: '#28a745', borderWidth: 2, fill: false },
+            { label: 'Potencia Aparente (kVA)', data: [], borderColor: '#ffc107', borderWidth: 2, fill: false }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Eficiencia: kW vs kVA' } }
+    }
+  });
+
+  // 2. Carga vs Desbalance (Salud) - Doble Eje Y
+  const ctxUnbal = document.getElementById('cgeUnbalanceChart').getContext('2d');
+  const cgeUnbalanceChart = new Chart(ctxUnbal, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'Desbalance (%)', data: [], borderColor: '#dc3545', borderWidth: 2, yAxisID: 'y1', fill: false },
+            { label: 'Corriente Avg (A)', data: [], borderColor: '#0a72c1', borderWidth: 1, yAxisID: 'y', fill: true, backgroundColor: 'rgba(10, 114, 193, 0.1)' }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Salud: Desbalance vs Carga' } },
+        scales: {
+            x: { display: false },
+            y: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Amps' } },
+            y1: { type: 'linear', display: true, position: 'left', title: { display: true, text: '%' }, grid: { drawOnChartArea: false } }
+        }
+    }
+  });
+
+  // 3. Perfil de Voltaje (Estabilidad)
+  const ctxVolt = document.getElementById('cgeVoltageChart').getContext('2d');
+  const cgeVoltageChart = new Chart(ctxVolt, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            { label: 'Voltaje L-L Avg (kV)', data: [], borderColor: '#17a2b8', borderWidth: 2, fill: false },
+            { label: 'Límite Alto (+5%)', data: [], borderColor: 'rgba(220, 53, 69, 0.5)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0 },
+            { label: 'Límite Bajo (-5%)', data: [], borderColor: 'rgba(220, 53, 69, 0.5)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0 }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Estabilidad de Red (15 kV Base)' } },
+        scales: {
+            y: { 
+                min: 14, max: 16, // Centrado en 15kV
+                title: { display: true, text: 'kV' } 
+            }
+        }
+    }
+  });
+
+  function updateCgeCharts() {
+      const now = new Date().toLocaleTimeString();
+      
+      // Actualizar Gráfico de Potencias
+      if (cgePowerChart.data.labels.length > 100) {
+          cgePowerChart.data.labels.shift();
+          cgePowerChart.data.datasets[0].data.shift();
+          cgePowerChart.data.datasets[1].data.shift();
+      }
+      cgePowerChart.data.labels.push(now);
+      cgePowerChart.data.datasets[0].data.push(cgeActivePower * 0.001); // W a kW
+      cgePowerChart.data.datasets[1].data.push(cgeApparentPower * 0.001); // VA a kVA
+      cgePowerChart.update('none'); // 'none' para mejor rendimiento
+
+      // Actualizar Gráfico Desbalance
+      if (cgeUnbalanceChart.data.labels.length > 100) {
+          cgeUnbalanceChart.data.labels.shift();
+          cgeUnbalanceChart.data.datasets[0].data.shift();
+          cgeUnbalanceChart.data.datasets[1].data.shift();
+      }
+      cgeUnbalanceChart.data.labels.push(now);
+      cgeUnbalanceChart.data.datasets[0].data.push(cgeCurrentUnbalance);
+      cgeUnbalanceChart.data.datasets[1].data.push(cgeCurrentAmp);
+      cgeUnbalanceChart.update('none');
+
+      // Actualizar Gráfico Voltaje
+      if (cgeVoltageChart.data.labels.length > 100) {
+          cgeVoltageChart.data.labels.shift();
+          cgeVoltageChart.data.datasets.forEach(d => d.data.shift());
+      }
+      cgeVoltageChart.data.labels.push(now);
+      cgeVoltageChart.data.datasets[0].data.push(cgeVoltageAvg * 0.001); // V a kV
+      cgeVoltageChart.data.datasets[1].data.push(15.75); // +5%
+      cgeVoltageChart.data.datasets[2].data.push(14.25); // -5%
+      cgeVoltageChart.update('none');
+  }
+
   // --- Lógica de Análisis por Buque ---
   let vesselChartInstance = null;
   let vesselAnalysisActive = false;
@@ -2048,13 +2342,20 @@
     if (event.target == vModal) {
       closeVesselModal();
     }
+    const cModal = document.getElementById('cgeModal');
+    if (event.target == cModal) {
+      closeCgeModal();
+    }
   }
 
    // Suscripción al topic
   client.on('connect', () => {
     console.log('Conectado al broker MQTT');
-    connText.textContent = 'Conectado';
-    document.getElementById('connectionStatus').className = 'status-connected';
+    const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
+    const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
+    textEls.forEach(el => { if(el) el.textContent = 'Conectado'; });
+    statusEls.forEach(el => { if(el) el.className = 'status-connected'; });
+
     lastDataTime = Date.now(); // Reiniciar contador al conectar
     client.subscribe('MEDIDOR_CGE');
     client.subscribe('I_MAX_GRUAS');  // Suscripción al topic I_MAX_GRUAS
@@ -2071,6 +2372,12 @@
     client.subscribe('Viento_STS1');
     client.subscribe('REGISTRO_PEAK');
     client.subscribe('RESPUESTA_SLOWSTS'); // Suscripción para recibir info de último slow down
+    client.subscribe('CU_UN_WOR');
+    client.subscribe('VOLT_L_L_AVG');
+    client.subscribe('VOLT_UB_L_N_WOR');
+    client.subscribe('APARENTE_TOTAL');
+    client.subscribe('ACTIVE_TOTAL');
+    client.subscribe('REACTIVE_TOTAL');
     client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
@@ -2102,19 +2409,25 @@
    //
    
   client.on('reconnect', () => {
-    connText.textContent = 'Reconectando...';
-    document.getElementById('connectionStatus').className = 'status-reconnecting';
+    const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
+    const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
+    textEls.forEach(el => { if(el) el.textContent = 'Reconectando...'; });
+    statusEls.forEach(el => { if(el) el.className = 'status-reconnecting'; });
   });
 
   client.on('close', () => {
-    connText.textContent = 'Desconectado';
-    document.getElementById('connectionStatus').className = 'status-disconnected';
+    const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
+    const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
+    textEls.forEach(el => { if(el) el.textContent = 'Desconectado'; });
+    statusEls.forEach(el => { if(el) el.className = 'status-disconnected'; });
   });
 
   client.on('error', (err) => {
     console.error('Error MQTT:', err);
-    connText.textContent = 'Error de conexión';
-    document.getElementById('connectionStatus').className = 'status-disconnected';
+    const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
+    const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
+    textEls.forEach(el => { if(el) el.textContent = 'Error de conexión'; });
+    statusEls.forEach(el => { if(el) el.className = 'status-disconnected'; });
   });
 
   client.on('message', (topic, message) => {
@@ -2132,6 +2445,11 @@
         document.getElementById('topic1').innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
         document.getElementById('topic1Loader').style.display = 'none';
         document.getElementById('topic1Content').style.display = 'block';
+
+        // Actualizar valor en el modal si existe
+        cgeCurrentAmp = value; // Guardar para gráfico
+        const modalAmp = document.getElementById('val_CGE_AMP');
+        if (modalAmp) modalAmp.innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
 
         // Alerta ejemplo: valor > 120
         if(value > 120) {
@@ -2246,6 +2564,51 @@
           el.style.display = 'block';
         }
       } catch (e) { console.error("Error procesando respuesta slow sts:", e); }
+    }
+
+    // Manejo de datos adicionales Medidor CGE
+    const cgeMap = {
+      'CU_UN_WOR': { id: 'val_CU_UN_WOR', unit: '%', scale: 1 },
+      'VOLT_L_L_AVG': { id: 'val_VOLT_L_L_AVG', unit: 'kV', scale: 0.001 },
+      'VOLT_UB_L_N_WOR': { id: 'val_VOLT_UB_L_N_WOR', unit: '%', scale: 1 },
+      'APARENTE_TOTAL': { id: 'val_APARENTE_TOTAL', unit: 'kVA', scale: 0.001 },
+      'ACTIVE_TOTAL': { id: 'val_ACTIVE_TOTAL', unit: 'kW', scale: 0.001 },
+      'REACTIVE_TOTAL': { id: 'val_REACTIVE_TOTAL', unit: 'kVAR', scale: 0.001 }
+    };
+    if (cgeMap[topic]) {
+      let val = parseFloat(message.toString());
+      if (!isNaN(val)) {
+        const config = cgeMap[topic];
+        
+        // Guardar valores crudos para cálculo de FP
+        if (topic === 'ACTIVE_TOTAL') cgeActivePower = val;
+        if (topic === 'APARENTE_TOTAL') cgeApparentPower = val;
+        if (topic === 'CU_UN_WOR') cgeCurrentUnbalance = val;
+        if (topic === 'VOLT_L_L_AVG') cgeVoltageAvg = val;
+
+        // Llamar actualización de gráficos (Throttled o directo)
+        // Para no saturar, podríamos usar un throttle, pero directo está bien si los datos no son > 10Hz
+        if (document.getElementById('cgeModal').style.display === 'block') {
+             // Solo actualizar si el modal está visible para ahorrar recursos
+             // Usamos un pequeño debounce o directo si el flujo es lento
+             updateCgeCharts();
+        }
+
+        // Aplicar escala (ej: W -> kW)
+        val = val * config.scale;
+
+        const formattedVal = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById(config.id).innerHTML = `${formattedVal} <span class="sts-unit">${config.unit}</span>`;
+
+        // Calcular Factor de Potencia
+        if ((topic === 'ACTIVE_TOTAL' || topic === 'APARENTE_TOTAL') && cgeApparentPower > 0) {
+            const fp = cgeActivePower / cgeApparentPower;
+            const fpElement = document.getElementById('val_FACTOR_POTENCIA');
+            if(fpElement) {
+                fpElement.innerHTML = fp.toFixed(3);
+            }
+        }
+      }
     }
 
     // Manejo de respuestas de Historial KWH (Dinámico)
