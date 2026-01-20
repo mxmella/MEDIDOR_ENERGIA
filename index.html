@@ -1235,7 +1235,7 @@
            <div class="sts-box" style="background: #0a72c1;">
               <div class="sts-title" style="font-size: 0.9rem;">Potencia Activa Total</div>
               <div id="val_ACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kW</span></div>
-              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Active Power (Real)</div>
+              <div id="desc_ACTIVE_TOTAL" style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Active Power (Real)</div>
            </div>
            <div class="sts-box" style="background: #0a72c1;">
               <div class="sts-title" style="font-size: 0.9rem;">Potencia Reactiva Total</div>
@@ -2599,6 +2599,22 @@
 
         const formattedVal = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         document.getElementById(config.id).innerHTML = `${formattedVal} <span class="sts-unit">${config.unit}</span>`;
+
+        // Lógica de estado Regenerando/Consumiendo para Potencia Activa
+        if (topic === 'ACTIVE_TOTAL') {
+            const descEl = document.getElementById('desc_ACTIVE_TOTAL');
+            if (descEl) {
+                if (val < 0) {
+                    descEl.innerHTML = '♻️ Regenerando Energía';
+                    descEl.style.color = '#69f0ae'; // Verde neón para resaltar
+                    descEl.style.fontWeight = 'bold';
+                } else {
+                    descEl.innerHTML = '🔌 Consumiendo de Red';
+                    descEl.style.color = 'rgba(255,255,255,0.9)';
+                    descEl.style.fontWeight = 'normal';
+                }
+            }
+        }
 
         // Calcular Factor de Potencia
         if ((topic === 'ACTIVE_TOTAL' || topic === 'APARENTE_TOTAL') && cgeApparentPower > 0) {
