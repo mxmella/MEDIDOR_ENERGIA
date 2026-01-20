@@ -1732,6 +1732,9 @@
     pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
     btnPrev.disabled = currentPage === 1;
     btnNext.disabled = currentPage === totalPages;
+
+    // Actualizar el gráfico con los datos DE ESTA PÁGINA
+    updatePeakChart(pageData);
   }
 
   function updateLastPeakWidget() {
@@ -1747,11 +1750,12 @@
     if(content) content.style.display = 'block';
   }
 
-  function updatePeakChart() {
-    // Invertimos los datos para que el gráfico muestre de más antiguo a más nuevo
-    const chartData = [...peakHistoryData].reverse();
-    peakChart.data.labels = chartData.map(d => d.date);
-    peakChart.data.datasets[0].data = chartData.map(d => d.value);
+  function updatePeakChart(dataToRender) {
+    // Recibimos solo los 10 datos de la página actual
+    // Los invertimos para que en el gráfico el más antiguo salga a la izquierda
+    const reversedData = [...(dataToRender || [])].reverse();
+    peakChart.data.labels = reversedData.map(d => d.date);
+    peakChart.data.datasets[0].data = reversedData.map(d => d.value);
     peakChart.update();
   }
 
@@ -1772,12 +1776,12 @@
 
   function addPeakToHistory(value, datetime) {
     // Añadir al array de datos
-    peakHistoryData.unshift({ date: datetime, value: value });
+    const newItem = { date: datetime, value: value };
+    peakHistoryData.unshift(newItem);
     
     // Limitar a 150 páginas (10 * 150 = 1500 registros)
-    if (peakHistoryData.length > (rowsPerPage * maxPages)) {
-      peakHistoryData.pop();
-    }
+    const maxRecords = rowsPerPage * maxPages;
+    if (peakHistoryData.length > maxRecords) peakHistoryData.pop();
 
     // Si estamos en la primera página, renderizamos para ver el nuevo dato
     if (currentPage === 1) {
@@ -1791,7 +1795,7 @@
 
     // Actualizar el widget del último peak
     updateLastPeakWidget();
-    updatePeakChart();
+    // updatePeakChart se llama dentro de renderTable si estamos en pag 1
     updateHistoryDateRange();
   }
 
@@ -2925,8 +2929,25 @@
         
         // Caso 1: Array completo (Carga inicial o masiva)
         if (Array.isArray(historyData)) {
-          // Actualizamos la variable local con los datos recibidos del servidor
-          peakHistoryData = historyData;
+          let processedData = historyData;
+          
+          // Si los datos vienen en formato crudo (col1, col2...), los convertimos
+          if (processedData.length > 0 && processedData[0].col1) {
+             processedData = processedData.map(d => ({
+                 date: `${d.col1} ${d.col2}`,
+                 value: parseFloat(d.col3)
+             }));
+          }
+
+          // Limitar la cantidad de datos en memoria para evitar congelamiento (Max 1500 registros)
+          const maxRecords = rowsPerPage * maxPages;
+          if (processedData.length > maxRecords) {
+             processedData = processedData.slice(0, maxRecords);
+          }
+
+          // Guardamos TODO en memoria (es rápido)
+          peakHistoryData = processedData;
+          currentPage = 1;
           
           // Optimizacion: Deferir el renderizado para evitar congelar la UI (Tarjetas en tiempo real)
           requestAnimationFrame(() => {
@@ -2939,7 +2960,11 @@
             
             // Deferir el gráfico (operación más pesada) un poco más
             setTimeout(() => {
-               updatePeakChart();
+               // Forzar actualización del gráfico para asegurar que se vea sin cambiar de página
+               if (currentPage === 1) {
+                   const pageData = peakHistoryData.slice(0, rowsPerPage);
+                   updatePeakChart(pageData);
+               }
                updateHistoryDateRange();
             }, 50);
           });
@@ -2958,15 +2983,23 @@
 
           peakHistoryData.unshift({ date: fullDate, value: value });
           
-          if (currentPage === 1) renderTable();
-          
-          document.getElementById('historyIndicator').textContent = `🗂️ Historial: Cargado (${peakHistoryData.length} reg.)`;
-          document.getElementById('historyIndicator').style.color = "#28a745";
-          updateLastPeakWidget();
-          updatePeakChart();
-          updateHistoryDateRange();
-          document.getElementById('mainTableLoader').style.display = 'none';
-          document.getElementById('peakChartLoader').style.display = 'none';
+          // Actualizar indicador de carga visualmente
+          const ind = document.getElementById('historyIndicator');
+          if(ind) {
+             ind.textContent = `🗂️ Historial: Recibiendo (${peakHistoryData.length})`;
+             ind.style.color = "#fd7e14";
+          }
+
+          // Debounce: Esperar a que dejen de llegar datos para actualizar la UI (evita parpadeo y carga lenta)
+          clearTimeout(renderTimeout);
+          renderTimeout = setTimeout(() => {
+              if (currentPage === 1) renderTable(); // Esto actualiza tabla y gráfico
+              updateLastPeakWidget();
+              updateHistoryDateRange();
+              if(ind) { ind.textContent = `🗂️ Historial: Cargado (${peakHistoryData.length} reg.)`; ind.style.color = "#28a745"; }
+              document.getElementById('mainTableLoader').style.display = 'none';
+              document.getElementById('peakChartLoader').style.display = 'none';
+          }, 200);
         }
       } catch (e) { 
         console.error("Error procesando historial peaks:", e);
@@ -2979,3 +3012,4 @@
 </script>
 </body>
 </html>
+
