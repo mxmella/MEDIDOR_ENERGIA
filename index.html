@@ -1029,6 +1029,11 @@
       border-color: #78350f;
     }
 
+    /* Corrección de color para títulos en tarjetas dentro de modales (fondo oscuro) */
+    .modal-body-custom .sts-box .sts-title {
+      color: #fff !important;
+    }
+
     /* Estilos para la tabla de análisis en el modal CGE */
     .analysis-table {
       width: 100%;
@@ -1079,6 +1084,59 @@
       background-color: rgba(6, 78, 59, 0.4);
       border-color: #065f46;
       color: #d1fae5;
+    }
+    
+    /* Estilos para el menú desplegable de la guía */
+    .collapsible-btn {
+      background-color: rgba(10, 61, 102, 0.05);
+      color: var(--color-primary);
+      cursor: pointer;
+      padding: 15px;
+      width: 100%;
+      border: 1px solid #eee;
+      text-align: left;
+      outline: none;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 30px;
+      transition: all 0.3s ease;
+    }
+    .collapsible-btn:hover { background-color: rgba(10, 61, 102, 0.1); }
+    .collapsible-content {
+      padding: 0 15px;
+      display: none;
+      overflow: hidden;
+      background-color: transparent;
+      border: 1px solid #eee;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+    }
+    
+    /* Dark mode adjustments for collapsible */
+    body.dark-mode .collapsible-btn {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--color-text-dark);
+      border-color: #334155;
+    }
+    body.dark-mode .collapsible-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+    body.dark-mode .collapsible-content { border-color: #334155; }
+
+    /* Animación para Regeneración */
+    @keyframes pulse-green-bg {
+      0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(40, 167, 69, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+    .regenerating-mode {
+      background: linear-gradient(135deg, #198754, #28a745) !important;
+      animation: pulse-green-bg 2s infinite;
+      border: 2px solid #fff !important;
+      transform: scale(1.02);
+      z-index: 10;
     }
   </style>
 </head>
@@ -1222,17 +1280,19 @@
       </div>
       <div class="modal-body-custom">
         <div class="dashboard-grid" style="max-width: 100%;">
-           <div class="sts-box" style="background: #0a72c1;">
+           <div class="sts-box" style="background: #0a72c1; cursor: pointer;" onclick="openCurrentModal()">
               <div class="sts-title" style="font-size: 0.9rem;">Corriente Total</div>
               <div id="val_CGE_AMP" class="sts-data">-- <span class="sts-unit">Amp</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Amperaje Instantáneo</div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px; border: 1px solid rgba(255,255,255,0.4); padding: 2px 8px; border-radius: 10px; display: inline-block;">👆 Ver Fases</div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
+           <div class="sts-box" style="background: #0a72c1; cursor: pointer;" onclick="openVoltageModal()">
               <div class="sts-title" style="font-size: 0.9rem;">Voltaje Promedio L-L</div>
               <div id="val_VOLT_L_L_AVG" class="sts-data">-- <span class="sts-unit">kV</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Media Tensión</div>
+              <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px; border: 1px solid rgba(255,255,255,0.4); padding: 2px 8px; border-radius: 10px; display: inline-block;">👆 Ver Fases</div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
+           <div id="card_ACTIVE_TOTAL" class="sts-box" style="background: #0a72c1;">
               <div class="sts-title" style="font-size: 0.9rem;">Potencia Activa Total</div>
               <div id="val_ACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kW</span></div>
               <div id="desc_ACTIVE_TOTAL" style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Active Power (Real)</div>
@@ -1282,11 +1342,13 @@
         </div>
 
         <!-- Sección de Análisis y Guía -->
-        <h3 style="margin-top: 30px; margin-bottom: 15px; font-size: 1.2rem; border-bottom: 1px solid #eee; padding-bottom: 10px;">
-            📚 Guía de Análisis y Unidades
-        </h3>
+        <button type="button" id="btnGuide" class="collapsible-btn" onclick="toggleGuide()">
+            <span>📚 Guía de Análisis y Unidades</span>
+            <span id="guideArrow" style="font-size: 0.8em;">▼</span>
+        </button>
         
-        <div style="overflow-x: auto;">
+        <div id="guideContent" class="collapsible-content">
+          <div style="overflow-x: auto; margin-top: 15px; margin-bottom: 15px;">
           <table class="analysis-table">
             <thead>
               <tr>
@@ -1305,21 +1367,128 @@
               <tr><td><strong>Desbalance Voltaje</strong></td><td>Porcentaje (%)</td><td>Suministro de red muy estable.</td></tr>
             </tbody>
           </table>
+          </div>
         </div>
 
-        <div class="fp-verification">
-          <div style="font-weight: bold; margin-bottom: 8px; font-size: 1rem;">✅ Verificación del Factor de Potencia ($FP$)</div>
+        <button type="button" id="btnFp" class="collapsible-btn" onclick="toggleFp()" style="margin-top: 15px;">
+            <span>✅ Verificación del Factor de Potencia FP</span>
+            <span id="fpArrow" style="font-size: 0.8em;">▼</span>
+        </button>
+        
+        <div id="fpContent" class="collapsible-content">
+          <div class="fp-verification" style="margin-top: 15px; margin-bottom: 15px;">
           <div style="margin-bottom: 8px;">El cálculo que realiza el sistema es:</div>
           <div style="font-family: monospace; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 6px; display: inline-block; margin-bottom: 8px; font-weight: bold;">
-             $$FP = \frac{P (kW)}{S (kVA)}$$
+             FP = (kW)/(kVA)
           </div>
           <div style="font-size: 0.95em; opacity: 0.95; line-height: 1.5;">
              Ejemplo con tus datos: <br>
-             475.71 kW / 478.43 kVA = <strong>0.994</strong> <br>
+             <span id="fpExampleCalc">-- kW / -- kVA = <strong>--</strong></span> <br>
              <em>Este valor es ideal. Generalmente, cualquier valor por encima de 0.93 evita multas por energía reactiva, y tú estás prácticamente en el tope de eficiencia.</em>
+          </div>
           </div>
         </div>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Detalles de Voltaje por Fase -->
+  <div id="voltageModal" class="modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 900px; padding: 0; border: none; border-radius: 12px;">
+      <div class="modal-header-custom">
+        <h2><span>⚡</span> Voltajes de Línea</h2>
+        <span class="close-modal" onclick="closeVoltageModal()" style="color: #fff; opacity: 0.8; float: none;">&times;</span>
+      </div>
+      <div class="modal-body-custom">
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #0a3d66; font-size: 1rem;">Voltajes de Línea (L-L)</h3>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje A-B</div>
+              <div id="val_VOLTAJE_A-B" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje B-C</div>
+              <div id="val_VOLTAJE_B-C" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje C-A</div>
+              <div id="val_VOLTAJE_C-A" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+        </div>
+        <div class="chart-container-modal" style="height: 250px; margin-bottom: 20px;">
+            <canvas id="voltagePhasesChart"></canvas>
+        </div>
+
+        <h3 style="margin-top: 10px; margin-bottom: 10px; color: #0a3d66; font-size: 1rem; border-top: 1px solid #eee; padding-top: 20px;">Voltajes de Fase (L-N)</h3>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
+           <div class="sts-box" style="background: #17a2b8;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje A-N</div>
+              <div id="val_VOLTAJE_A-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+           <div class="sts-box" style="background: #17a2b8;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje B-N</div>
+              <div id="val_VOLTAJE_B-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+           <div class="sts-box" style="background: #17a2b8;">
+              <div class="sts-title" style="font-size: 0.9rem;">Voltaje C-N</div>
+              <div id="val_VOLTAJE_C-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+           <div class="sts-box" style="background: #17a2b8;">
+              <div class="sts-title" style="font-size: 0.9rem;">Promedio L-N</div>
+              <div id="val_VOLTAJE_TOTAL_L-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           </div>
+        </div>
+
+        <div class="chart-container-modal" style="height: 250px;">
+            <canvas id="voltageLNChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Detalles de Corriente -->
+  <div id="currentModal" class="modal" style="z-index: 10000;">
+    <div class="modal-content" style="max-width: 900px; padding: 0; border: none; border-radius: 12px;">
+      <div class="modal-header-custom">
+        <h2><span>⚡</span> Corrientes del Sistema</h2>
+        <span class="close-modal" onclick="closeCurrentModal()" style="color: #fff; opacity: 0.8; float: none;">&times;</span>
+      </div>
+      <div class="modal-body-custom">
+        <h3 style="margin-top: 0; margin-bottom: 10px; color: #0a3d66; font-size: 1rem;">Corrientes de Fase</h3>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 10px;">
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Fase A</div>
+              <div id="val_CORRIENTE_A" class="sts-data">-- <span class="sts-unit">A</span></div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Fase B</div>
+              <div id="val_CORRIENTE_B" class="sts-data">-- <span class="sts-unit">A</span></div>
+           </div>
+           <div class="sts-box" style="background: #0a72c1;">
+              <div class="sts-title" style="font-size: 0.9rem;">Fase C</div>
+              <div id="val_CORRIENTE_C" class="sts-data">-- <span class="sts-unit">A</span></div>
+           </div>
+        </div>
+        <div class="chart-container-modal" style="height: 250px; margin-bottom: 20px;">
+            <canvas id="currentPhasesChart"></canvas>
+        </div>
+
+        <h3 style="margin-top: 10px; margin-bottom: 10px; color: #0a3d66; font-size: 1rem; border-top: 1px solid #eee; padding-top: 20px;">Corrientes Neutro y Tierra</h3>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
+           <div class="sts-box" style="background: #17a2b8;">
+              <div class="sts-title" style="font-size: 0.9rem;">Neutro (N)</div>
+              <div id="val_CORRIENTE_N" class="sts-data">-- <span class="sts-unit">A</span></div>
+           </div>
+           <div class="sts-box" style="background: #6c757d;">
+              <div class="sts-title" style="font-size: 0.9rem;">Tierra (G)</div>
+              <div id="val_CORRIENTE_TIERRA" class="sts-data">-- <span class="sts-unit">A</span></div>
+           </div>
+        </div>
+
+        <div class="chart-container-modal" style="height: 250px;">
+            <canvas id="currentNGChart"></canvas>
+        </div>
       </div>
     </div>
   </div>
@@ -1560,6 +1729,19 @@
   let cgeCurrentAmp = 0;
   let cgeCurrentUnbalance = 0;
   let cgeVoltageAvg = 0;
+  // Variables para voltajes de fase
+  let voltAB = 0;
+  let voltBC = 0;
+  let voltCA = 0;
+  let voltAN = 0;
+  let voltBN = 0;
+  let voltCN = 0;
+  // Variables para corrientes (NEW)
+  let currA = 0;
+  let currB = 0;
+  let currC = 0;
+  let currN = 0;
+  let currG = 0;
 
   // Variables para Watchdog (Monitor de flujo de datos)
   let lastDataTime = Date.now();
@@ -1954,6 +2136,54 @@
     document.getElementById('cgeModal').style.display = 'none';
   }
 
+  function openVoltageModal() {
+    document.getElementById('voltageModal').style.display = 'block';
+  }
+
+  function closeVoltageModal() {
+    document.getElementById('voltageModal').style.display = 'none';
+  }
+
+  function openCurrentModal() {
+    document.getElementById('currentModal').style.display = 'block';
+  }
+
+  function closeCurrentModal() {
+    document.getElementById('currentModal').style.display = 'none';
+  }
+
+  function toggleGuide() {
+    const content = document.getElementById("guideContent");
+    const arrow = document.getElementById("guideArrow");
+    const btn = document.getElementById("btnGuide");
+    
+    if (content.style.display === "block") {
+      content.style.display = "none";
+      arrow.innerHTML = "▼";
+      btn.style.borderRadius = "8px"; 
+    } else {
+      content.style.display = "block";
+      arrow.innerHTML = "▲";
+      btn.style.borderRadius = "8px 8px 0 0"; 
+    }
+  }
+
+  function toggleFp() {
+    const content = document.getElementById("fpContent");
+    const arrow = document.getElementById("fpArrow");
+    const btn = document.getElementById("btnFp");
+    
+    if (content.style.display === "block") {
+      content.style.display = "none";
+      arrow.innerHTML = "▼";
+      btn.style.borderRadius = "8px"; 
+    } else {
+      content.style.display = "block";
+      arrow.innerHTML = "▲";
+      btn.style.borderRadius = "8px 8px 0 0"; 
+    }
+  }
+
   // --- Inicialización de Gráficos CGE (Tendencias) ---
   const commonOptions = {
     responsive: true,
@@ -2027,6 +2257,151 @@
     }
   });
 
+  // 4. Gráfico Lineal para Voltajes de Fase
+  const ctxPhaseVolt = document.getElementById('voltagePhasesChart').getContext('2d');
+  const voltagePhasesChart = new Chart(ctxPhaseVolt, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: 'Fase A-B',
+                data: [],
+                borderColor: '#ffc107', // Amarillo
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase B-C',
+                data: [],
+                borderColor: '#28a745', // Verde
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase C-A',
+                data: [],
+                borderColor: '#17a2b8', // Cyan
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Historial de Voltajes de Línea (L-L)' }, legend: { display: true } },
+        scales: {
+            y: { beginAtZero: false, title: { display: true, text: 'kV' } }
+        }
+    }
+  });
+
+  // 5. Gráfico Lineal para Voltajes de Fase (L-N)
+  const ctxPhaseVoltLN = document.getElementById('voltageLNChart').getContext('2d');
+  const voltageLNChart = new Chart(ctxPhaseVoltLN, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: 'Fase A-N',
+                data: [],
+                borderColor: '#ffc107', // Amarillo
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase B-N',
+                data: [],
+                borderColor: '#28a745', // Verde
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase C-N',
+                data: [],
+                borderColor: '#17a2b8', // Cyan
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Historial de Voltajes de Fase (L-N)' }, legend: { display: true } },
+        scales: {
+            y: { beginAtZero: false, title: { display: true, text: 'kV' } }
+        }
+    }
+  });
+
+  // 6. Gráfico Lineal para Corrientes de Fase (A, B, C)
+  const ctxCurrPhases = document.getElementById('currentPhasesChart').getContext('2d');
+  const currentPhasesChart = new Chart(ctxCurrPhases, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: 'Fase A',
+                data: [],
+                borderColor: '#ffc107', // Amarillo
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase B',
+                data: [],
+                borderColor: '#28a745', // Verde
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Fase C',
+                data: [],
+                borderColor: '#17a2b8', // Cyan
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Historial de Corrientes de Fase' }, legend: { display: true } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Amps' } } }
+    }
+  });
+
+  // 7. Gráfico Lineal para Corrientes Neutro y Tierra
+  const ctxCurrNG = document.getElementById('currentNGChart').getContext('2d');
+  const currentNGChart = new Chart(ctxCurrNG, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [
+            {
+                label: 'Neutro (N)',
+                data: [],
+                borderColor: '#17a2b8', // Cyan/Azul claro
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Tierra (G)',
+                data: [],
+                borderColor: '#6c757d', // Gris
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        ...commonOptions,
+        plugins: { ...commonOptions.plugins, title: { display: true, text: 'Historial Corrientes Neutro y Tierra' }, legend: { display: true } },
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Amps' } } }
+    }
+  });
+
   function updateCgeCharts() {
       const now = new Date().toLocaleTimeString();
       
@@ -2062,6 +2437,61 @@
       cgeVoltageChart.data.datasets[1].data.push(15.75); // +5%
       cgeVoltageChart.data.datasets[2].data.push(14.25); // -5%
       cgeVoltageChart.update('none');
+  }
+
+  function updateVoltagePhaseChart() {
+      const now = new Date().toLocaleTimeString();
+      
+      // Actualizar L-L
+      if (voltagePhasesChart.data.labels.length > 100) {
+          voltagePhasesChart.data.labels.shift();
+          voltagePhasesChart.data.datasets.forEach(d => d.data.shift());
+      }
+      
+      voltagePhasesChart.data.labels.push(now);
+      voltagePhasesChart.data.datasets[0].data.push(voltAB * 0.001);
+      voltagePhasesChart.data.datasets[1].data.push(voltBC * 0.001);
+      voltagePhasesChart.data.datasets[2].data.push(voltCA * 0.001);
+      
+      voltagePhasesChart.update('none');
+
+      // Actualizar L-N
+      if (voltageLNChart.data.labels.length > 100) {
+          voltageLNChart.data.labels.shift();
+          voltageLNChart.data.datasets.forEach(d => d.data.shift());
+      }
+      
+      voltageLNChart.data.labels.push(now);
+      voltageLNChart.data.datasets[0].data.push(voltAN * 0.001);
+      voltageLNChart.data.datasets[1].data.push(voltBN * 0.001);
+      voltageLNChart.data.datasets[2].data.push(voltCN * 0.001);
+      
+      voltageLNChart.update('none');
+  }
+
+  function updateCurrentCharts() {
+      const now = new Date().toLocaleTimeString();
+      
+      // Actualizar Fases A, B, C
+      if (currentPhasesChart.data.labels.length > 100) {
+          currentPhasesChart.data.labels.shift();
+          currentPhasesChart.data.datasets.forEach(d => d.data.shift());
+      }
+      currentPhasesChart.data.labels.push(now);
+      currentPhasesChart.data.datasets[0].data.push(currA);
+      currentPhasesChart.data.datasets[1].data.push(currB);
+      currentPhasesChart.data.datasets[2].data.push(currC);
+      currentPhasesChart.update('none');
+
+      // Actualizar Neutro y Tierra
+      if (currentNGChart.data.labels.length > 100) {
+          currentNGChart.data.labels.shift();
+          currentNGChart.data.datasets.forEach(d => d.data.shift());
+      }
+      currentNGChart.data.labels.push(now);
+      currentNGChart.data.datasets[0].data.push(currN);
+      currentNGChart.data.datasets[1].data.push(currG);
+      currentNGChart.update('none');
   }
 
   // --- Lógica de Análisis por Buque ---
@@ -2350,6 +2780,14 @@
     if (event.target == cModal) {
       closeCgeModal();
     }
+    const v2Modal = document.getElementById('voltageModal');
+    if (event.target == v2Modal) {
+      closeVoltageModal();
+    }
+    const c2Modal = document.getElementById('currentModal');
+    if (event.target == c2Modal) {
+      closeCurrentModal();
+    }
   }
 
    // Suscripción al topic
@@ -2382,6 +2820,18 @@
     client.subscribe('APARENTE_TOTAL');
     client.subscribe('ACTIVE_TOTAL');
     client.subscribe('REACTIVE_TOTAL');
+    client.subscribe('VOLTAJE_A-B');
+    client.subscribe('VOLTAJE_B-C');
+    client.subscribe('VOLTAJE_C-A');
+    client.subscribe('VOLTAJE_A-N');
+    client.subscribe('VOLTAJE_B-N');
+    client.subscribe('VOLTAJE_C-N');
+    client.subscribe('VOLTAJE_TOTAL_L-N');
+    client.subscribe('CORRIENTE_A');
+    client.subscribe('CORRIENTE_B');
+    client.subscribe('CORRIENTE_C');
+    client.subscribe('CORRIENTE_N');
+    client.subscribe('CORRIENTE_TIERRA');
     client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
@@ -2577,7 +3027,19 @@
       'VOLT_UB_L_N_WOR': { id: 'val_VOLT_UB_L_N_WOR', unit: '%', scale: 1 },
       'APARENTE_TOTAL': { id: 'val_APARENTE_TOTAL', unit: 'kVA', scale: 0.001 },
       'ACTIVE_TOTAL': { id: 'val_ACTIVE_TOTAL', unit: 'kW', scale: 0.001 },
-      'REACTIVE_TOTAL': { id: 'val_REACTIVE_TOTAL', unit: 'kVAR', scale: 0.001 }
+      'REACTIVE_TOTAL': { id: 'val_REACTIVE_TOTAL', unit: 'kVAR', scale: 0.001 },
+      'VOLTAJE_A-B': { id: 'val_VOLTAJE_A-B', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_B-C': { id: 'val_VOLTAJE_B-C', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_C-A': { id: 'val_VOLTAJE_C-A', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_A-N': { id: 'val_VOLTAJE_A-N', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_B-N': { id: 'val_VOLTAJE_B-N', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_C-N': { id: 'val_VOLTAJE_C-N', unit: 'kV', scale: 0.001 },
+      'VOLTAJE_TOTAL_L-N': { id: 'val_VOLTAJE_TOTAL_L-N', unit: 'kV', scale: 0.001 },
+      'CORRIENTE_A': { id: 'val_CORRIENTE_A', unit: 'A', scale: 1 },
+      'CORRIENTE_B': { id: 'val_CORRIENTE_B', unit: 'A', scale: 1 },
+      'CORRIENTE_C': { id: 'val_CORRIENTE_C', unit: 'A', scale: 1 },
+      'CORRIENTE_N': { id: 'val_CORRIENTE_N', unit: 'A', scale: 1 },
+      'CORRIENTE_TIERRA': { id: 'val_CORRIENTE_TIERRA', unit: 'A', scale: 1 }
     };
     if (cgeMap[topic]) {
       let val = parseFloat(message.toString());
@@ -2589,6 +3051,17 @@
         if (topic === 'APARENTE_TOTAL') cgeApparentPower = val;
         if (topic === 'CU_UN_WOR') cgeCurrentUnbalance = val;
         if (topic === 'VOLT_L_L_AVG') cgeVoltageAvg = val;
+        if (topic === 'VOLTAJE_A-B') voltAB = val;
+        if (topic === 'VOLTAJE_B-C') voltBC = val;
+        if (topic === 'VOLTAJE_C-A') voltCA = val;
+        if (topic === 'VOLTAJE_A-N') voltAN = val;
+        if (topic === 'VOLTAJE_B-N') voltBN = val;
+        if (topic === 'VOLTAJE_C-N') voltCN = val;
+        if (topic === 'CORRIENTE_A') currA = val;
+        if (topic === 'CORRIENTE_B') currB = val;
+        if (topic === 'CORRIENTE_C') currC = val;
+        if (topic === 'CORRIENTE_N') currN = val;
+        if (topic === 'CORRIENTE_TIERRA') currG = val;
 
         // Llamar actualización de gráficos (Throttled o directo)
         // Para no saturar, podríamos usar un throttle, pero directo está bien si los datos no son > 10Hz
@@ -2596,6 +3069,14 @@
              // Solo actualizar si el modal está visible para ahorrar recursos
              // Usamos un pequeño debounce o directo si el flujo es lento
              updateCgeCharts();
+        }
+        
+        if (document.getElementById('voltageModal').style.display === 'block') {
+             updateVoltagePhaseChart();
+        }
+        
+        if (document.getElementById('currentModal').style.display === 'block') {
+             updateCurrentCharts();
         }
 
         // Aplicar escala (ej: W -> kW)
@@ -2607,15 +3088,20 @@
         // Lógica de estado Regenerando/Consumiendo para Potencia Activa
         if (topic === 'ACTIVE_TOTAL') {
             const descEl = document.getElementById('desc_ACTIVE_TOTAL');
-            if (descEl) {
+            const cardEl = document.getElementById('card_ACTIVE_TOTAL');
+            if (descEl && cardEl) {
                 if (val < 0) {
-                    descEl.innerHTML = '♻️ Regenerando Energía';
-                    descEl.style.color = '#69f0ae'; // Verde neón para resaltar
+                    descEl.innerHTML = '♻️ REGENERANDO ENERGÍA';
+                    descEl.style.color = '#fff'; 
                     descEl.style.fontWeight = 'bold';
+                    descEl.style.fontSize = '0.9rem';
+                    cardEl.classList.add('regenerating-mode');
                 } else {
                     descEl.innerHTML = '🔌 Consumiendo de Red';
                     descEl.style.color = 'rgba(255,255,255,0.9)';
                     descEl.style.fontWeight = 'normal';
+                    descEl.style.fontSize = '0.75rem';
+                    cardEl.classList.remove('regenerating-mode');
                 }
             }
         }
@@ -2626,6 +3112,11 @@
             const fpElement = document.getElementById('val_FACTOR_POTENCIA');
             if(fpElement) {
                 fpElement.innerHTML = fp.toFixed(3);
+            }
+            // Actualizar ejemplo en la guía FP con datos reales
+            const fpEx = document.getElementById('fpExampleCalc');
+            if(fpEx) {
+                fpEx.innerHTML = `${(cgeActivePower*0.001).toFixed(2)} kW / ${(cgeApparentPower*0.001).toFixed(2)} kVA = <strong>${fp.toFixed(3)}</strong>`;
             }
         }
       }
