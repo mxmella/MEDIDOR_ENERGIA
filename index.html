@@ -15,7 +15,7 @@
 
     /* Variables CSS para temas claro/oscuro */
     :root {
-      --color-bg-light: #fff;
+      --color-bg-light: #f3f4f6;
       --color-text-light: #333;
       --color-bg-dark: #0f172a;
       --color-surface-dark: #1e293b;
@@ -96,18 +96,21 @@
       margin-bottom: 30px;
     }
     button {
-      background: none;
-      border: 2px solid var(--color-primary);
-      color: var(--color-primary);
+      background-color: var(--color-primary);
+      border: none;
+      color: #fff;
       cursor: pointer;
       margin: 0 12px;
-      padding: 8px;
-      border-radius: 6px;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
     }
     button:hover:not(:disabled) {
-      background-color: var(--color-primary);
-      color: #fff;
+      background-color: var(--color-primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
     }
     button:disabled {
       border-color: #bbb;
@@ -116,12 +119,13 @@
       opacity: 0.7;
     }
     body.dark-mode button {
-      border-color: var(--color-text-dark);
+      background-color: var(--color-surface-dark);
+      border: 1px solid var(--color-text-dark);
       color: var(--color-text-dark);
     }
     body.dark-mode button:hover:not(:disabled) {
       background-color: var(--color-text-dark);
-      color: var(--color-primary);
+      color: var(--color-bg-dark);
     }
     svg {
       width: 32px;
@@ -137,7 +141,7 @@
       color: var(--color-text-light);
       font-size: 16px;
       box-shadow: 0 0 15px rgba(10, 61, 102, 0.15);
-      border-radius: 12px;
+      border-radius: 16px;
       overflow: hidden;
       background: #fafcff;
       transition: background-color 0.4s ease, color 0.4s ease;
@@ -153,6 +157,9 @@
       text-align: left;
       user-select: none;
       transition: background-color 0.4s ease;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
     }
     body.dark-mode thead tr {
       background-color: var(--color-table-header-bg-dark);
@@ -283,18 +290,10 @@
     /* Botón de Informe - Estilos mejorados */
     #reportBtn {
       background-color: #28a745;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+      /* Hereda estilos generales de button */
     }
     #reportBtn:hover {
       background-color: #218838; /* Verde más oscuro al pasar el mouse */
-      transform: translateY(-2px); /* Efecto de elevación */
-      box-shadow: 0 4px 8px rgba(40, 167, 69, 0.4); /* Sombra suave */
     }
 
     /* Alertas */
@@ -335,7 +334,7 @@
       text-align: center;
       border-radius: 16px;
       color: #fff;
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.1);
       transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
       display: flex;
       flex-direction: column;
@@ -346,17 +345,17 @@
     /* Iconos decorativos */
     .card-icon {
       position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 40px;
-      height: 40px;
+      top: 15px;
+      right: 15px;
+      width: 48px;
+      height: 48px;
       opacity: 0.2; /* Transparencia para que sea sutil */
       color: #fff;
       pointer-events: none;
     }
     .sts-box:hover {
       transform: translateY(-5px);
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.1);
     }
     .sts-title {
       font-size: 1.2rem;
@@ -396,9 +395,10 @@
       background: rgba(255,255,255,0.85);
       backdrop-filter: blur(12px);
       border-radius: 20px;
-      box-shadow: var(--shadow-card);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       gap: 20px;
       flex-wrap: wrap;
+      border: 1px solid rgba(255,255,255,0.5);
     }
     .header-left {
       display: flex;
@@ -1215,6 +1215,7 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts1" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(1)">📊 Ver Historial KWH</button>
+        <button class="btn-history" onclick="openSlowDownModal(1)" style="margin-top: 5px; background-color: #ffc107; color: #333; border: none;">📉 Gráfico Slow Down</button>
       </div>
     </div>
     <div id="topic4-cell" class="sts-box">
@@ -1228,6 +1229,7 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts2" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(2)">📊 Ver Historial KWH</button>
+        <button class="btn-history" onclick="openSlowDownModal(2)" style="margin-top: 5px; background-color: #ffc107; color: #333; border: none;">📉 Gráfico Slow Down</button>
       </div>
     </div>
     <div id="topic5-cell" class="sts-box">
@@ -1241,6 +1243,7 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts3" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(3)">📊 Ver Historial KWH</button>
+        <button class="btn-history" onclick="openSlowDownModal(3)" style="margin-top: 5px; background-color: #ffc107; color: #333; border: none;">📉 Gráfico Slow Down</button>
       </div>
     </div>
     <div id="topic6-cell" class="sts-box">
@@ -1254,6 +1257,7 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts4" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(4)">📊 Ver Historial KWH</button>
+        <button class="btn-history" onclick="openSlowDownModal(4)" style="margin-top: 5px; background-color: #ffc107; color: #333; border: none;">📉 Gráfico Slow Down</button>
       </div>
     </div>
     <div id="topic7-cell" class="sts-box">
@@ -1267,6 +1271,7 @@
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts5" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(5)">📊 Ver Historial KWH</button>
+        <button class="btn-history" onclick="openSlowDownModal(5)" style="margin-top: 5px; background-color: #ffc107; color: #333; border: none;">📉 Gráfico Slow Down</button>
       </div>
     </div>
   </div>
@@ -1676,6 +1681,44 @@
     </div>
   </div>
 
+  <!-- Modal para Gráfico Slow Down STS1 -->
+  <div id="slowDownModal" class="modal">
+    <div class="modal-content" style="max-width: 1000px;">
+      <div class="modal-header-custom">
+        <h2 id="slowDownModalTitle">📉 Gráfico Slow Down</h2>
+        <span class="close-modal" onclick="closeSlowDownModal()">&times;</span>
+      </div>
+      <div class="modal-body-custom">
+        <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Seleccionar Fecha:</label>
+            <input type="date" id="slowDownDateInput" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-size: 1rem;">
+          </div>
+          <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestSlowDownData()">Consultar</button>
+        </div>
+        <div id="slowDownLoader" class="loader"></div>
+        <div id="slowDownMsg" style="text-align: center; display: none; color: #666; margin-bottom: 10px;"></div>
+        <div class="chart-container-modal" style="height: 400px; width: 100%;">
+          <canvas id="slowDownChart"></canvas>
+        </div>
+        <div class="table-container" style="max-height: 300px; overflow-y: auto; margin-top: 20px;">
+          <table id="slowDownTable" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead style="position: sticky; top: 0; background-color: #fff; z-index: 1;">
+              <tr style="background-color: var(--color-primary); color: #fff;">
+                <th style="padding: 10px; text-align: left;">Fecha/Hora</th>
+                <th style="padding: 10px; text-align: left;">Tipo</th>
+                <th style="padding: 10px; text-align: left;">Estado</th>
+                <th style="padding: 10px; text-align: left;">Evento</th>
+                <th style="padding: 10px; text-align: left;">Duración</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <script>
   // Variables para modo oscuro persistente
   const bodyEl = document.body;
@@ -1764,11 +1807,22 @@
     }
   }, 2000);
 
+  // Inicialización de datos vacíos para mostrar grilla al inicio (Efecto Scroll)
+  const initLabels = [];
+  const initData1 = [];
+  const initData2 = [];
+  const nowInit = new Date();
+  for(let i=19; i>=0; i--) {
+    initLabels.push(new Date(nowInit.getTime() - i*2000).toLocaleTimeString());
+    initData1.push(null);
+    initData2.push(null);
+  }
+
   const data = {
-    labels: [], 
+    labels: initLabels, 
     datasets: [{
       label: 'Medidor CGE (I Max)', 
-      data: [],
+      data: initData1,
       borderColor: '#0a72c1',
       backgroundColor: 'rgba(10, 114, 193, 0.3)',
       fill: true,
@@ -1779,7 +1833,7 @@
       hoverBorderWidth: 4
     }, {
       label: 'I_MAX_GRUAS', 
-      data: [],
+      data: initData2,
       borderColor: '#ffc72c',
       backgroundColor: 'rgba(255, 199, 44, 0.3)',
       fill: true,
@@ -1818,6 +1872,7 @@
           grid: { color: 'rgba(10, 61, 102, 0.15)' }
         },
         y: {
+          beginAtZero: true,
           title: { display: true, text: 'I Max', color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 18, weight: 'bold' } },
           ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66' },
           grid: { color: 'rgba(10, 61, 102, 0.15)' }
@@ -2788,6 +2843,7 @@
     if (event.target == c2Modal) {
       closeCurrentModal();
     }
+    if (event.target == document.getElementById('slowDownModal')) closeSlowDownModal();
   }
 
    // Suscripción al topic
@@ -3499,7 +3555,202 @@
         document.getElementById('lastPeakContent').style.display = 'block';
       }
     }
+
+    // Manejo de respuesta Slow Down STS1
+    if (topic.startsWith('respuesta_SLOW_STS')) {
+      // Extraer el número de la grúa del topic (ej: respuesta_SLOW_STS1 -> 1)
+      const receivedId = parseInt(topic.replace('respuesta_SLOW_STS', ''));
+      const currentId = parseInt(window.currentSlowDownStsId);
+      
+      // Limpiar timeout de espera si llega respuesta
+      // Verificar que la respuesta corresponda a la grúa que estamos viendo actualmente
+      if (receivedId !== currentId) return;
+
+      if (window.slowDownTimeout) clearTimeout(window.slowDownTimeout);
+      document.getElementById('slowDownLoader').style.display = 'none';
+      const msgEl = document.getElementById('slowDownMsg');
+      const rawData = message.toString();
+      
+      let labels = [];
+      let values = [];
+      
+      // Limpiar tabla antes de agregar nuevos datos
+      const tbody = document.querySelector('#slowDownTable tbody');
+      if (tbody) tbody.innerHTML = '';
+      let lastStartTime = null;
+
+      try {
+        const json = JSON.parse(rawData);
+        
+        // Caso: Objeto con contenido_csv (Formato específico solicitado)
+        if (json.contenido_csv) {
+            const lines = json.contenido_csv.split(/\r?\n/);
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                const parts = line.split(',');
+                if (parts.length >= 4) {
+                    // 0: Timestamp, 1: ID, 2: Type, 3: VERDADERO/FALSO, 4: INICIO/FIN
+                    labels.push(parts[0].trim());
+                    const timestamp = parts[0].trim();
+                    const type = parts[2].trim();
+                    const valStr = parts[3].trim().toUpperCase();
+                    const event = parts.length > 4 ? parts[4].trim() : '';
+                    const isTrue = (valStr === 'VERDADERO' || valStr === 'TRUE');
+
+                    labels.push(timestamp);
+                    values.push(valStr === 'VERDADERO' ? 1 : 0);
+                    values.push(isTrue ? 1 : 0);
+
+                    // Calcular duración entre TRUE y FALSE
+                    let durationStr = '';
+                    const currentMs = new Date(timestamp).getTime();
+                    
+                    if (isTrue) {
+                        lastStartTime = currentMs;
+                    } else {
+                        if (lastStartTime !== null && !isNaN(lastStartTime) && !isNaN(currentMs)) {
+                            const diff = (currentMs - lastStartTime) / 1000;
+                            durationStr = diff >= 0 ? diff.toFixed(1) + ' s' : '';
+                            lastStartTime = null;
+                        }
+                    }
+
+                    // Agregar fila a la tabla
+                    if (tbody) {
+                        const row = tbody.insertRow();
+                        row.innerHTML = `<td style="padding: 8px; border-bottom: 1px solid #ddd;">${timestamp}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${type}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${valStr}</td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${event}</td>`;
+                        const bgStyle = isTrue ? 'background-color: rgba(220, 53, 69, 0.05);' : '';
+                        row.innerHTML = `<td style="padding: 8px; border-bottom: 1px solid #ddd; ${bgStyle}">${timestamp}</td><td style="padding: 8px; border-bottom: 1px solid #ddd; ${bgStyle}">${type}</td><td style="padding: 8px; border-bottom: 1px solid #ddd; ${bgStyle}">${valStr}</td><td style="padding: 8px; border-bottom: 1px solid #ddd; ${bgStyle}">${event}</td><td style="padding: 8px; border-bottom: 1px solid #ddd; ${bgStyle}; font-weight:bold;">${durationStr}</td>`;
+                    }
+                }
+            });
+        } 
+        // Caso: Array directo (Compatibilidad anterior)
+        else if (Array.isArray(json)) {
+          json.forEach(item => {
+            labels.push(item.hora || item.time || item.fecha);
+            values.push(item.valor || item.value || item.status);
+          });
+        }
+      } catch (e) {
+        console.error("Error parseando respuesta Slow Down:", e);
+      }
+
+      if (values.length > 0) {
+        msgEl.style.display = 'none';
+        if (window.slowDownChartInstance) window.slowDownChartInstance.destroy();
+        
+        const ctxSD = document.getElementById('slowDownChart').getContext('2d');
+        window.slowDownChartInstance = new Chart(ctxSD, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Estado Slow Down',
+              data: values,
+              borderColor: '#dc3545',
+              backgroundColor: 'rgba(220, 53, 69, 0.2)',
+              borderWidth: 2,
+              fill: true,
+              stepped: true, // Gráfico escalonado ideal para estados
+              pointRadius: 0,
+              pointHoverRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            scales: {
+              x: { title: { display: true, text: 'Hora' } },
+              y: { 
+                  title: { display: true, text: 'Estado' },
+                  min: 0,
+                  max: 1.2,
+                  ticks: { stepSize: 1, callback: function(val) { return val === 1 ? 'ACTIVO' : (val === 0 ? 'NORMAL' : val); } }
+              }
+            },
+            plugins: {
+                tooltip: { callbacks: { label: function(c) { return c.raw === 1 ? '⚠️ Slow Down ACTIVO' : '✅ Normal'; } } }
+            }
+          }
+        });
+      } else {
+        if (window.slowDownChartInstance) {
+            window.slowDownChartInstance.destroy();
+            window.slowDownChartInstance = null;
+        }
+        msgEl.innerHTML = '<div style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 8px; border: 1px solid #f5c6cb; margin-top: 20px;"><strong>❌ Sin Datos</strong><br>No se encontraron registros de Slow Down para la fecha seleccionada.</div>';
+        msgEl.style.display = 'block';
+      }
+    }
   });
+
+  // Funciones para Modal Slow Down
+  window.currentSlowDownStsId = 1;
+
+  function openSlowDownModal(id) {
+    window.currentSlowDownStsId = id;
+    document.getElementById('slowDownModalTitle').textContent = `📉 Gráfico Slow Down - STS${id}`;
+    document.getElementById('slowDownModal').style.display = 'block';
+    
+    // Suscripción dinámica: Solo escuchar a la grúa seleccionada para evitar cruce de datos
+    const topic = `respuesta_SLOW_STS${id}`;
+    client.subscribe(topic, (err) => {
+        if(!err) console.log(`✅ Suscrito dinámicamente a ${topic}`);
+    });
+
+    // Poner fecha de hoy por defecto si está vacío
+    const input = document.getElementById('slowDownDateInput');
+    if(!input.value) input.value = new Date().toISOString().split('T')[0];
+  }
+  
+  function closeSlowDownModal() {
+    // Desuscribirse al cerrar
+    const id = window.currentSlowDownStsId;
+    if (id) {
+        const topic = `respuesta_SLOW_STS${id}`;
+        client.unsubscribe(topic, () => {
+            console.log(`🔕 Desuscrito de ${topic}`);
+        });
+    }
+    document.getElementById('slowDownModal').style.display = 'none';
+  }
+  
+  function requestSlowDownData() {
+    const dateVal = document.getElementById('slowDownDateInput').value;
+    if(!dateVal) { alert("Seleccione una fecha"); return; }
+    
+    document.getElementById('slowDownLoader').style.display = 'block';
+    document.getElementById('slowDownMsg').style.display = 'none';
+    
+    // Limpiar tabla visualmente mientras carga
+    const tbody = document.querySelector('#slowDownTable tbody');
+    if (tbody) tbody.innerHTML = '';
+    
+    if (window.slowDownChartInstance) {
+      window.slowDownChartInstance.destroy();
+      window.slowDownChartInstance = null;
+    }
+    
+    // Publicar consulta con formato YYYY-MM-DD
+    const topicConsulta = `consulta_SLOW_STS${window.currentSlowDownStsId}`;
+    console.log(`📤 Enviando consulta a: ${topicConsulta}, Mensaje: ${dateVal}`);
+    client.publish(topicConsulta, dateVal);
+    
+    // Timeout para alertar si no hay respuesta (8 segundos)
+    if (window.slowDownTimeout) clearTimeout(window.slowDownTimeout);
+    window.slowDownTimeout = setTimeout(() => {
+        document.getElementById('slowDownLoader').style.display = 'none';
+        if (window.slowDownChartInstance) {
+            window.slowDownChartInstance.destroy();
+            window.slowDownChartInstance = null;
+        }
+        const msgEl = document.getElementById('slowDownMsg');
+        msgEl.innerHTML = '<div style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 8px; border: 1px solid #f5c6cb; margin-top: 20px;"><strong>❌ Sin Datos</strong><br>No se encontraron registros de Slow Down para la fecha seleccionada.</div>';
+        msgEl.style.display = 'block';
+    }, 8000);
+  }
 </script>
 </body>
 </html>
