@@ -400,6 +400,17 @@
       flex-wrap: wrap;
       border: 1px solid rgba(255,255,255,0.5);
     }
+    .header-clock {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: var(--color-text-light);
+      margin-top: 4px;
+      text-transform: capitalize;
+      opacity: 0.8;
+    }
+    body.dark-mode .header-clock {
+      color: var(--color-text-dark);
+    }
     .header-left {
       display: flex;
       align-items: center;
@@ -1156,6 +1167,7 @@
       <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
       <div class="header-info">
         <h1>Sistema de Gestión Energética</h1>
+        <div id="liveClock" class="header-clock">--</div>
         <div id="reportTimestamp" class="print-only"></div>
       </div>
     </div>
@@ -1820,6 +1832,15 @@
     }
   }, 2000);
 
+  // Crear degradados para el gráfico principal (Efecto Profesional)
+  const gradientCGE = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientCGE.addColorStop(0, 'rgba(10, 114, 193, 0.6)'); // Color primario más fuerte arriba
+  gradientCGE.addColorStop(1, 'rgba(10, 114, 193, 0.05)'); // Desvanecimiento total abajo
+
+  const gradientGruas = ctx.createLinearGradient(0, 0, 0, 400);
+  gradientGruas.addColorStop(0, 'rgba(255, 199, 44, 0.6)');
+  gradientGruas.addColorStop(1, 'rgba(255, 199, 44, 0.05)');
+
   // Inicialización de datos vacíos para mostrar grilla al inicio (Efecto Scroll)
   const initLabels = [];
   const initData1 = [];
@@ -1837,7 +1858,7 @@
       label: 'Medidor CGE (I Max)', 
       data: initData1,
       borderColor: '#0a72c1',
-      backgroundColor: 'rgba(10, 114, 193, 0.3)',
+      backgroundColor: gradientCGE, // Usar degradado
       fill: true,
       tension: 0.3,
       pointRadius: 0,
@@ -1848,7 +1869,7 @@
       label: 'I_MAX_GRUAS', 
       data: initData2,
       borderColor: '#ffc72c',
-      backgroundColor: 'rgba(255, 199, 44, 0.3)',
+      backgroundColor: gradientGruas, // Usar degradado
       fill: true,
       tension: 0.3,
       pointRadius: 0,
@@ -1902,6 +1923,10 @@
   
   // Configuración del Gráfico de Peaks
   const ctxPeak = document.getElementById('peakChart').getContext('2d');
+  const gradientPeak = ctxPeak.createLinearGradient(0, 0, 0, 400);
+  gradientPeak.addColorStop(0, 'rgba(220, 53, 69, 0.6)');
+  gradientPeak.addColorStop(1, 'rgba(220, 53, 69, 0.05)');
+
   const peakChart = new Chart(ctxPeak, {
     type: 'line',
     data: {
@@ -1910,7 +1935,7 @@
         label: 'Valor del Peak (Amp)',
         data: [],
         borderColor: '#dc3545',
-        backgroundColor: 'rgba(220, 53, 69, 0.2)',
+        backgroundColor: gradientPeak,
         fill: true,
         tension: 0.3,
         pointRadius: 4,
@@ -2138,6 +2163,24 @@
     });
 
     const ctxModal = document.getElementById('kwhShiftChart').getContext('2d');
+    
+    // Gradientes para turnos
+    const gradT1 = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradT1.addColorStop(0, 'rgba(255, 199, 44, 0.8)');
+    gradT1.addColorStop(1, 'rgba(255, 199, 44, 0.1)');
+
+    const gradT2 = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradT2.addColorStop(0, 'rgba(10, 114, 193, 0.8)');
+    gradT2.addColorStop(1, 'rgba(10, 114, 193, 0.1)');
+
+    const gradT3 = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradT3.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
+    gradT3.addColorStop(1, 'rgba(40, 167, 69, 0.1)');
+
+    const gradDef = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradDef.addColorStop(0, 'rgba(100, 100, 100, 0.8)');
+    gradDef.addColorStop(1, 'rgba(100, 100, 100, 0.1)');
+
     kwhChartInstance = new Chart(ctxModal, {
       type: 'bar',
       data: {
@@ -2145,7 +2188,13 @@
         datasets: [{
           label: 'Consumo del Turno (kWh)',
           data: data,
-          backgroundColor: bgColors,
+          backgroundColor: chartData.map(i => {
+            const t = (i.turno || '').toLowerCase();
+            if(t.includes('turno 1')) return gradT1;
+            if(t.includes('turno 2')) return gradT2;
+            if(t.includes('turno 3')) return gradT3;
+            return gradDef;
+          }),
           borderColor: borderColors,
           borderWidth: 1
         }]
@@ -2169,6 +2218,10 @@
     const data = weeklyData.map(d => d.total);
 
     const ctxWeekly = document.getElementById('kwhWeeklyChart').getContext('2d');
+    const gradientWeekly = ctxWeekly.createLinearGradient(0, 0, 0, 400);
+    gradientWeekly.addColorStop(0, 'rgba(54, 162, 235, 0.8)');
+    gradientWeekly.addColorStop(1, 'rgba(54, 162, 235, 0.1)');
+
     kwhWeeklyChartInstance = new Chart(ctxWeekly, {
       type: 'bar',
       data: {
@@ -2176,7 +2229,7 @@
         datasets: [{
           label: 'Consumo Semanal Total (kWh)',
           data: data,
-          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          backgroundColor: gradientWeekly,
           borderColor: '#36a2eb',
           borderWidth: 1
         }]
@@ -2264,13 +2317,21 @@
 
   // 1. Triángulo de Potencias (Eficiencia)
   const ctxPower = document.getElementById('cgePowerChart').getContext('2d');
+  const gradPowerActive = ctxPower.createLinearGradient(0, 0, 0, 400);
+  gradPowerActive.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
+  gradPowerActive.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+  const gradPowerApparent = ctxPower.createLinearGradient(0, 0, 0, 400);
+  gradPowerApparent.addColorStop(0, 'rgba(255, 199, 7, 0.5)');
+  gradPowerApparent.addColorStop(1, 'rgba(255, 199, 7, 0.05)');
+
   const cgePowerChart = new Chart(ctxPower, {
     type: 'line',
     data: {
         labels: [],
         datasets: [
-            { label: 'Potencia Activa (kW)', data: [], borderColor: '#28a745', borderWidth: 2, fill: false },
-            { label: 'Potencia Aparente (kVA)', data: [], borderColor: '#ffc107', borderWidth: 2, fill: false }
+            { label: 'Potencia Activa (kW)', data: [], borderColor: '#28a745', borderWidth: 2, fill: true, backgroundColor: gradPowerActive },
+            { label: 'Potencia Aparente (kVA)', data: [], borderColor: '#ffc107', borderWidth: 2, fill: true, backgroundColor: gradPowerApparent }
         ]
     },
     options: {
@@ -2281,13 +2342,17 @@
 
   // 2. Carga vs Desbalance (Salud) - Doble Eje Y
   const ctxUnbal = document.getElementById('cgeUnbalanceChart').getContext('2d');
+  const gradUnbalCurrent = ctxUnbal.createLinearGradient(0, 0, 0, 400);
+  gradUnbalCurrent.addColorStop(0, 'rgba(10, 114, 193, 0.5)');
+  gradUnbalCurrent.addColorStop(1, 'rgba(10, 114, 193, 0.05)');
+
   const cgeUnbalanceChart = new Chart(ctxUnbal, {
     type: 'line',
     data: {
         labels: [],
         datasets: [
             { label: 'Desbalance (%)', data: [], borderColor: '#dc3545', borderWidth: 2, yAxisID: 'y1', fill: false },
-            { label: 'Corriente Avg (A)', data: [], borderColor: '#0a72c1', borderWidth: 1, yAxisID: 'y', fill: true, backgroundColor: 'rgba(10, 114, 193, 0.1)' }
+            { label: 'Corriente Avg (A)', data: [], borderColor: '#0a72c1', borderWidth: 1, yAxisID: 'y', fill: true, backgroundColor: gradUnbalCurrent }
         ]
     },
     options: {
@@ -2303,12 +2368,16 @@
 
   // 3. Perfil de Voltaje (Estabilidad)
   const ctxVolt = document.getElementById('cgeVoltageChart').getContext('2d');
+  const gradVolt = ctxVolt.createLinearGradient(0, 0, 0, 400);
+  gradVolt.addColorStop(0, 'rgba(23, 162, 184, 0.5)');
+  gradVolt.addColorStop(1, 'rgba(23, 162, 184, 0.05)');
+
   const cgeVoltageChart = new Chart(ctxVolt, {
     type: 'line',
     data: {
         labels: [],
         datasets: [
-            { label: 'Voltaje L-L Avg (kV)', data: [], borderColor: '#17a2b8', borderWidth: 2, fill: false },
+            { label: 'Voltaje L-L Avg (kV)', data: [], borderColor: '#17a2b8', borderWidth: 2, fill: true, backgroundColor: gradVolt },
             { label: 'Límite Alto (+5%)', data: [], borderColor: 'rgba(220, 53, 69, 0.5)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0 },
             { label: 'Límite Bajo (-5%)', data: [], borderColor: 'rgba(220, 53, 69, 0.5)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0 }
         ]
@@ -2712,6 +2781,15 @@
     // Renderizar Gráfico
     if (vesselChartInstance) vesselChartInstance.destroy();
     const ctx = document.getElementById('vesselChart').getContext('2d');
+    
+    // Helper para gradientes
+    const createGrad = (r, g, b) => {
+        const gr = ctx.createLinearGradient(0, 0, 0, 400);
+        gr.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.8)`);
+        gr.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.1)`);
+        return gr;
+    };
+
     vesselChartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
@@ -2719,7 +2797,7 @@
         datasets: [{
           label: 'Consumo (kWh)',
           data: results.map(r => r.value),
-          backgroundColor: ['#0a72c1', '#ffc72c', '#dc3545', '#28a745', '#6f42c1'],
+          backgroundColor: [createGrad(10,114,193), createGrad(255,199,44), createGrad(220,53,69), createGrad(40,167,69), createGrad(111,66,193)],
           borderWidth: 1
         }]
       },
@@ -3669,6 +3747,10 @@
         if (window.slowDownChartInstance) window.slowDownChartInstance.destroy();
         
         const ctxSD = document.getElementById('slowDownChart').getContext('2d');
+        const gradientSD = ctxSD.createLinearGradient(0, 0, 0, 400);
+        gradientSD.addColorStop(0, 'rgba(220, 53, 69, 0.6)');
+        gradientSD.addColorStop(1, 'rgba(220, 53, 69, 0.05)');
+
         window.slowDownChartInstance = new Chart(ctxSD, {
           type: 'line',
           data: {
@@ -3677,7 +3759,7 @@
               label: 'Estado Slow Down',
               data: values,
               borderColor: '#dc3545',
-              backgroundColor: 'rgba(220, 53, 69, 0.2)',
+              backgroundColor: gradientSD,
               borderWidth: 2,
               fill: true,
               stepped: true, // Gráfico escalonado ideal para estados
@@ -3786,6 +3868,15 @@
         msgEl.style.display = 'block';
     }, 8000);
   }
+
+  // Función para el Reloj en Tiempo Real
+  function updateClock() {
+    const now = new Date();
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+    document.getElementById('liveClock').textContent = now.toLocaleDateString('es-ES', options);
+  }
+  setInterval(updateClock, 1000);
+  updateClock(); // Ejecutar inmediatamente
 </script>
 </body>
 </html>
