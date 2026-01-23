@@ -754,7 +754,7 @@
       position: relative; 
       height: 300px; 
       flex: 1; 
-      min-width: 400px;
+      min-width: 280px;
       background: #fff;
       padding: 15px;
       border-radius: 16px;
@@ -1032,6 +1032,15 @@
     /* Corrección de color para títulos en tarjetas dentro de modales (fondo oscuro) */
     .modal-body-custom .sts-box .sts-title {
       color: #fff !important;
+    }
+    
+    /* Ajuste de tarjetas en el modal para optimizar espacio y mejorar visualización */
+    .modal-body-custom .sts-box {
+      min-height: 110px;
+      padding: 12px;
+    }
+    .modal-body-custom .sts-data {
+      font-size: 1.6rem;
     }
 
     /* Estilos para la tabla de análisis en el modal CGE */
@@ -1334,7 +1343,7 @@
             📈 Tendencias de Calidad de Energía
         </h3>
         
-        <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; max-width: 100%;">
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); max-width: 100%;">
             <div class="chart-container-modal">
                 <canvas id="cgePowerChart"></canvas>
             </div>
@@ -1695,6 +1704,10 @@
             <input type="date" id="slowDownDateInput" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-size: 1rem;">
           </div>
           <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestSlowDownData()">Consultar</button>
+        </div>
+        <div id="slowDownAnalysis" style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; display: none; border: 1px solid #ffeeba;">
+            <div style="font-size: 0.9rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Tiempo Total en Slow Down</div>
+            <div id="totalSlowDownTime" style="font-size: 1.8rem; font-weight: 800; margin-top: 5px;">--</div>
         </div>
         <div id="slowDownLoader" class="loader"></div>
         <div id="slowDownMsg" style="text-align: center; display: none; color: #666; margin-bottom: 10px;"></div>
@@ -3578,6 +3591,7 @@
       const tbody = document.querySelector('#slowDownTable tbody');
       if (tbody) tbody.innerHTML = '';
       let lastStartTime = null;
+      let totalDurationMs = 0;
 
       try {
         const json = JSON.parse(rawData);
@@ -3610,7 +3624,10 @@
                     } else {
                         if (lastStartTime !== null && !isNaN(lastStartTime) && !isNaN(currentMs)) {
                             const diff = (currentMs - lastStartTime) / 1000;
-                            durationStr = diff >= 0 ? diff.toFixed(1) + ' s' : '';
+                            if (diff >= 0) {
+                                durationStr = diff.toFixed(1) + ' s';
+                                totalDurationMs += (currentMs - lastStartTime);
+                            }
                             lastStartTime = null;
                         }
                     }
@@ -3634,6 +3651,17 @@
         }
       } catch (e) {
         console.error("Error parseando respuesta Slow Down:", e);
+      }
+
+      // Mostrar análisis de tiempo total
+      if (totalDurationMs > 0) {
+          const seconds = Math.floor((totalDurationMs / 1000) % 60);
+          const minutes = Math.floor((totalDurationMs / (1000 * 60)) % 60);
+          const hours = Math.floor((totalDurationMs / (1000 * 60 * 60)));
+          document.getElementById('totalSlowDownTime').textContent = `${hours}h ${minutes}m ${seconds}s`;
+          document.getElementById('slowDownAnalysis').style.display = 'block';
+      } else {
+          document.getElementById('slowDownAnalysis').style.display = 'none';
       }
 
       if (values.length > 0) {
@@ -3694,6 +3722,9 @@
     document.getElementById('slowDownModalTitle').textContent = `📉 Gráfico Slow Down - STS${id}`;
     document.getElementById('slowDownModal').style.display = 'block';
     
+    // Ocultar análisis anterior
+    document.getElementById('slowDownAnalysis').style.display = 'none';
+    
     // Suscripción dinámica: Solo escuchar a la grúa seleccionada para evitar cruce de datos
     const topic = `respuesta_SLOW_STS${id}`;
     client.subscribe(topic, (err) => {
@@ -3703,6 +3734,9 @@
     // Poner fecha de hoy por defecto si está vacío
     const input = document.getElementById('slowDownDateInput');
     if(!input.value) input.value = new Date().toISOString().split('T')[0];
+    
+    // Cargar datos automáticamente al abrir
+    requestSlowDownData();
   }
   
   function closeSlowDownModal() {
@@ -3723,6 +3757,7 @@
     
     document.getElementById('slowDownLoader').style.display = 'block';
     document.getElementById('slowDownMsg').style.display = 'none';
+    document.getElementById('slowDownAnalysis').style.display = 'none';
     
     // Limpiar tabla visualmente mientras carga
     const tbody = document.querySelector('#slowDownTable tbody');
