@@ -341,6 +341,7 @@
       justify-content: center;
       align-items: center;
       min-height: 140px;
+      border: 1px solid rgba(255,255,255,0.1); /* Borde sutil para definición */
     }
     /* Iconos decorativos */
     .card-icon {
@@ -374,13 +375,59 @@
     }
     .sts-unit { font-size: 1rem; font-weight: normal; margin-left: 5px; }
     .slow-down-legend {
-      font-size: 0.9rem;
-      font-weight: bold;
+      font-size: 0.75rem;
+      font-weight: 800;
       color: #fff;
       margin-top: 10px;
-      background-color: rgba(0,0,0,0.2);
-      padding: 4px;
-      border-radius: 4px;
+      background-color: #dc3545;
+      padding: 4px 12px;
+      border-radius: 20px; /* Estilo píldora/badge */
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      animation: pulse-red 2s infinite; /* Animación de atención */
+      border: 2px solid rgba(255,255,255,0.9); /* Borde blanco para contraste */
+    }
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8); }
+      70% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    }
+
+    /* Toast Notifications (Notificaciones Flotantes) */
+    #toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      background: rgba(30, 41, 59, 0.95);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      font-size: 0.9rem;
+      backdrop-filter: blur(4px);
+      border-left: 4px solid var(--color-primary);
+      animation: slideIn 0.3s ease-out forwards;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast.success { border-left-color: #28a745; }
+    .toast.error { border-left-color: #dc3545; }
+    .toast.info { border-left-color: #0a72c1; }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(10px); }
     }
 
     /* Layout Grid */
@@ -863,6 +910,24 @@
       display: none;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Indicador de actualización (Spinner pequeño) */
+    .update-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-left: 8px;
+      opacity: 0;
+      transition: opacity 0.5s ease-out;
+      vertical-align: middle;
+    }
+    .update-spinner.active {
+      opacity: 1;
+    }
 
     /* Botón Exportar */
     .btn-export {
@@ -1669,6 +1734,14 @@
       </div>
       <div id="kwhReportTimestamp" class="print-only" style="margin-bottom: 10px;"></div>
       
+      <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Seleccionar Fecha:</label>
+            <input type="date" id="kwhDateInput" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-size: 1rem;">
+          </div>
+          <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestKwhHistoryData()">Consultar</button>
+      </div>
+      
       <div class="charts-wrapper">
         <div class="chart-container-modal"><canvas id="kwhShiftChart"></canvas></div>
         <div class="chart-container-modal"><canvas id="kwhWeeklyChart"></canvas></div>
@@ -1744,6 +1817,9 @@
     </div>
   </div>
 
+  <!-- Contenedor de Notificaciones -->
+  <div id="toast-container"></div>
+
 <script>
   // Variables para modo oscuro persistente
   const bodyEl = document.body;
@@ -1767,6 +1843,7 @@
 
   // Botón para generar informe (Imprimir / PDF)
   document.getElementById('reportBtn').addEventListener('click', () => {
+    showToast("Generando informe para impresión...", "info");
     // Guardar configuración actual
     const originalRows = rowsPerPage;
     // Cambiar a 50 filas para el reporte
@@ -2130,6 +2207,7 @@
     const dailyTotal = pageData.reduce((sum, item) => sum + (item.consumo || 0), 0);
     document.getElementById('dailyTotalLabel').textContent = `Consumo Total Día (${pageData[0]?.fechaTurno || '--'})`;
     document.getElementById('dailyTotalValue').textContent = `${dailyTotal.toFixed(2)} kWh`;
+    document.getElementById('dailyTotalDisplay').style.display = 'block';
 
     const totalPages = Math.ceil(kwhData.length / kwhRowsPerPage) || 1;
     document.getElementById('pageKwhInfo').textContent = `Página ${currentKwhPage} de ${totalPages}`;
@@ -2156,9 +2234,9 @@
     });
     const borderColors = chartData.map(i => {
       const t = (i.turno || '').toLowerCase();
-      if(t.includes('turno 1')) return '#ffc72c';
-      if(t.includes('turno 2')) return '#0a72c1';
-      if(t.includes('turno 3')) return '#28a745';
+      if(t.includes('turno 1') || t.includes('turno_1')) return '#ffc72c';
+      if(t.includes('turno 2') || t.includes('turno_2')) return '#0a72c1';
+      if(t.includes('turno 3') || t.includes('turno_3')) return '#28a745';
       return '#666';
     });
 
@@ -2190,9 +2268,9 @@
           data: data,
           backgroundColor: chartData.map(i => {
             const t = (i.turno || '').toLowerCase();
-            if(t.includes('turno 1')) return gradT1;
-            if(t.includes('turno 2')) return gradT2;
-            if(t.includes('turno 3')) return gradT3;
+            if(t.includes('turno 1') || t.includes('turno_1')) return gradT1;
+            if(t.includes('turno 2') || t.includes('turno_2')) return gradT2;
+            if(t.includes('turno 3') || t.includes('turno_3')) return gradT3;
             return gradDef;
           }),
           borderColor: borderColors,
@@ -2396,6 +2474,18 @@
 
   // 4. Gráfico Lineal para Voltajes de Fase
   const ctxPhaseVolt = document.getElementById('voltagePhasesChart').getContext('2d');
+  const gradVAB = ctxPhaseVolt.createLinearGradient(0, 0, 0, 400);
+  gradVAB.addColorStop(0, 'rgba(255, 199, 7, 0.5)');
+  gradVAB.addColorStop(1, 'rgba(255, 199, 7, 0.05)');
+
+  const gradVBC = ctxPhaseVolt.createLinearGradient(0, 0, 0, 400);
+  gradVBC.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
+  gradVBC.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+  const gradVCA = ctxPhaseVolt.createLinearGradient(0, 0, 0, 400);
+  gradVCA.addColorStop(0, 'rgba(23, 162, 184, 0.5)');
+  gradVCA.addColorStop(1, 'rgba(23, 162, 184, 0.05)');
+
   const voltagePhasesChart = new Chart(ctxPhaseVolt, {
     type: 'line',
     data: {
@@ -2406,21 +2496,24 @@
                 data: [],
                 borderColor: '#ffc107', // Amarillo
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVAB
             },
             {
                 label: 'Fase B-C',
                 data: [],
                 borderColor: '#28a745', // Verde
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVBC
             },
             {
                 label: 'Fase C-A',
                 data: [],
                 borderColor: '#17a2b8', // Cyan
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVCA
             }
         ]
     },
@@ -2435,6 +2528,18 @@
 
   // 5. Gráfico Lineal para Voltajes de Fase (L-N)
   const ctxPhaseVoltLN = document.getElementById('voltageLNChart').getContext('2d');
+  const gradVAN = ctxPhaseVoltLN.createLinearGradient(0, 0, 0, 400);
+  gradVAN.addColorStop(0, 'rgba(255, 199, 7, 0.5)');
+  gradVAN.addColorStop(1, 'rgba(255, 199, 7, 0.05)');
+
+  const gradVBN = ctxPhaseVoltLN.createLinearGradient(0, 0, 0, 400);
+  gradVBN.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
+  gradVBN.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+  const gradVCN = ctxPhaseVoltLN.createLinearGradient(0, 0, 0, 400);
+  gradVCN.addColorStop(0, 'rgba(23, 162, 184, 0.5)');
+  gradVCN.addColorStop(1, 'rgba(23, 162, 184, 0.05)');
+
   const voltageLNChart = new Chart(ctxPhaseVoltLN, {
     type: 'line',
     data: {
@@ -2445,21 +2550,24 @@
                 data: [],
                 borderColor: '#ffc107', // Amarillo
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVAN
             },
             {
                 label: 'Fase B-N',
                 data: [],
                 borderColor: '#28a745', // Verde
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVBN
             },
             {
                 label: 'Fase C-N',
                 data: [],
                 borderColor: '#17a2b8', // Cyan
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradVCN
             }
         ]
     },
@@ -2474,6 +2582,18 @@
 
   // 6. Gráfico Lineal para Corrientes de Fase (A, B, C)
   const ctxCurrPhases = document.getElementById('currentPhasesChart').getContext('2d');
+  const gradCurA = ctxCurrPhases.createLinearGradient(0, 0, 0, 400);
+  gradCurA.addColorStop(0, 'rgba(255, 199, 7, 0.5)');
+  gradCurA.addColorStop(1, 'rgba(255, 199, 7, 0.05)');
+
+  const gradCurB = ctxCurrPhases.createLinearGradient(0, 0, 0, 400);
+  gradCurB.addColorStop(0, 'rgba(40, 167, 69, 0.5)');
+  gradCurB.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+  const gradCurC = ctxCurrPhases.createLinearGradient(0, 0, 0, 400);
+  gradCurC.addColorStop(0, 'rgba(23, 162, 184, 0.5)');
+  gradCurC.addColorStop(1, 'rgba(23, 162, 184, 0.05)');
+
   const currentPhasesChart = new Chart(ctxCurrPhases, {
     type: 'line',
     data: {
@@ -2484,21 +2604,24 @@
                 data: [],
                 borderColor: '#ffc107', // Amarillo
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradCurA
             },
             {
                 label: 'Fase B',
                 data: [],
                 borderColor: '#28a745', // Verde
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradCurB
             },
             {
                 label: 'Fase C',
                 data: [],
                 borderColor: '#17a2b8', // Cyan
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradCurC
             }
         ]
     },
@@ -2511,6 +2634,14 @@
 
   // 7. Gráfico Lineal para Corrientes Neutro y Tierra
   const ctxCurrNG = document.getElementById('currentNGChart').getContext('2d');
+  const gradCurN = ctxCurrNG.createLinearGradient(0, 0, 0, 400);
+  gradCurN.addColorStop(0, 'rgba(23, 162, 184, 0.5)');
+  gradCurN.addColorStop(1, 'rgba(23, 162, 184, 0.05)');
+
+  const gradCurG = ctxCurrNG.createLinearGradient(0, 0, 0, 400);
+  gradCurG.addColorStop(0, 'rgba(108, 117, 125, 0.5)');
+  gradCurG.addColorStop(1, 'rgba(108, 117, 125, 0.05)');
+
   const currentNGChart = new Chart(ctxCurrNG, {
     type: 'line',
     data: {
@@ -2521,14 +2652,16 @@
                 data: [],
                 borderColor: '#17a2b8', // Cyan/Azul claro
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradCurN
             },
             {
                 label: 'Tierra (G)',
                 data: [],
                 borderColor: '#6c757d', // Gris
                 borderWidth: 2,
-                fill: false
+                fill: true,
+                backgroundColor: gradCurG
             }
         ]
     },
@@ -2838,9 +2971,10 @@
 
   function exportKwhToCsv() {
     if (!kwhData || kwhData.length === 0) {
-      alert("No hay datos disponibles para exportar.");
+      showToast("No hay datos disponibles para exportar.", "error");
       return;
     }
+    showToast("Exportando datos a Excel...", "success");
     
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent += "Fecha Turno,Hora Lectura,Turno,Energia (kWh),Consumo Turno (kWh)\n";
@@ -2864,31 +2998,32 @@
     currentStsHistoryId = stsId;
     const modal = document.getElementById('kwhModal');
     const title = document.getElementById('modalTitle');
-    const status = document.getElementById('modalStatus');
-    const loader = document.getElementById('modalLoader');
     
     modal.style.display = "block";
-    title.textContent = `Historial KWH - STS ${stsId}`;
+    title.innerHTML = `<span>📊</span> Historial KWH - STS ${stsId}`;
+    
+    // Poner fecha de hoy por defecto (siempre)
+    const input = document.getElementById('kwhDateInput');
+    const now = new Date();
+    // Ajuste para zona horaria local
+    input.value = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     
     // Resetear datos y tabla
     kwhData = [];
     currentKwhPage = 1;
     renderKwhTable();
-    
-    status.style.display = "none";
-    loader.style.display = "block"; // Mostrar spinner
 
-    // Suscribirse al tópico de respuesta específico
-    const responseTopic = `KWH_STS${stsId}_archivo_KWH`;
-    const requestTopic = `consultasts${stsId}_archivo_KWH`;
+    // Suscripción dinámica al nuevo topic de respuesta
+    const responseTopic = `respuesta_hist_kwh_STS${stsId}`;
     
     client.subscribe(responseTopic, (err) => {
       if(!err) {
-        console.log(`Suscrito a ${responseTopic} para historial.`);
-        // Publicar solicitud
-        client.publish(requestTopic, 'req');
+        console.log(`✅ Suscrito a ${responseTopic} para historial.`);
       }
     });
+    
+    // Consultar automáticamente al abrir
+    requestKwhHistoryData();
   }
 
   function closeHistory() {
@@ -2896,7 +3031,7 @@
     modal.style.display = "none";
     
     if(currentStsHistoryId !== null) {
-      const responseTopic = `KWH_STS${currentStsHistoryId}_archivo_KWH`;
+      const responseTopic = `respuesta_hist_kwh_STS${currentStsHistoryId}`;
       client.unsubscribe(responseTopic);
       console.log(`Desuscrito de ${responseTopic}`);
       currentStsHistoryId = null;
@@ -2910,6 +3045,27 @@
       kwhWeeklyChartInstance.destroy();
       kwhWeeklyChartInstance = null;
     }
+  }
+
+  function requestKwhHistoryData() {
+    const dateVal = document.getElementById('kwhDateInput').value;
+    if(!dateVal) { showToast("Seleccione una fecha", "error"); return; }
+
+    document.getElementById('modalLoader').style.display = 'block';
+    document.getElementById('modalStatus').style.display = 'none';
+    
+    // Limpiar datos previos
+    kwhData = [];
+    renderKwhTable();
+
+    const topic = `consulta_hist_kwh_STS${currentStsHistoryId}`;
+    console.log(`📤 Enviando consulta KWH a: ${topic}, Mensaje: ${dateVal}`);
+    client.publish(topic, dateVal);
+    
+    // Timeout simple para quitar loader si no hay respuesta
+    setTimeout(() => {
+        document.getElementById('modalLoader').style.display = 'none';
+    }, 8000);
   }
 
   // Cerrar modal si se hace clic fuera
@@ -2940,6 +3096,7 @@
    // Suscripción al topic
   client.on('connect', () => {
     console.log('Conectado al broker MQTT');
+    showToast("Conectado al servidor de datos", "success");
     const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
     const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
     textEls.forEach(el => { if(el) el.textContent = 'Conectado'; });
@@ -2979,18 +3136,19 @@
     client.subscribe('CORRIENTE_C');
     client.subscribe('CORRIENTE_N');
     client.subscribe('CORRIENTE_TIERRA');
-    client.subscribe(['KWH_STS1', 'KWH_STS2', 'KWH_STS3', 'KWH_STS4', 'KWH_STS5'], (err) => {
+    client.subscribe(['valor_actual_kwh_sts1', 'valor_actual_kwh_sts2', 'valor_actual_kwh_sts3', 'valor_actual_kwh_sts4', 'valor_actual_kwh_sts5'], (err) => {
       if (!err) {
         console.log("Suscrito a tópicos KWH. Iniciando consultas periódicas.");
         // Publicar periódicamente para solicitar datos de KWH
-        setInterval(() => {
-          console.log("Publicando solicitud de KWH...");
-          client.publish('consultasts1', 'req');
-          client.publish('consultasts2', 'req');
-          client.publish('consultasts3', 'req');
-          client.publish('consultasts4', 'req');
-          client.publish('consultasts5', 'req');
-        }, 5000); // Consulta cada 5 segundos
+        const requestKwhNow = () => {
+          client.publish('solicitar_kwh_ahora_sts1', 'req');
+          client.publish('solicitar_kwh_ahora_sts2', 'req');
+          client.publish('solicitar_kwh_ahora_sts3', 'req');
+          client.publish('solicitar_kwh_ahora_sts4', 'req');
+          client.publish('solicitar_kwh_ahora_sts5', 'req');
+        };
+        requestKwhNow(); // Solicitar inmediatamente al conectar
+        setInterval(requestKwhNow, 5000); // Consulta cada 5 segundos
 
         // Retrasar la solicitud de datos pesados (Historial) para priorizar la carga de tarjetas
         setTimeout(() => {
@@ -3025,6 +3183,7 @@
 
   client.on('error', (err) => {
     console.error('Error MQTT:', err);
+    showToast("Error de conexión MQTT", "error");
     const textEls = [document.getElementById('connText'), document.getElementById('connText2')];
     const statusEls = [document.getElementById('connectionStatus'), document.getElementById('connectionStatus2')];
     textEls.forEach(el => { if(el) el.textContent = 'Error de conexión'; });
@@ -3270,8 +3429,9 @@
     }
 
     // Manejo de respuestas de Historial KWH (Dinámico)
-    // Patrón: KWH_STS{N}_archivo_KWH
-    if (topic.startsWith('KWH_STS') && topic.endsWith('_archivo_KWH')) {
+    // Patrón antiguo: KWH_STS{N}_archivo_KWH (Para análisis buque)
+    // Patrón nuevo: respuesta_hist_kwh_STS{N} (Para historial por fecha)
+    if ((topic.startsWith('KWH_STS') && topic.endsWith('_archivo_KWH')) || topic.startsWith('respuesta_hist_kwh_STS')) {
       const status = document.getElementById('modalStatus');
       const loader = document.getElementById('modalLoader');
       const rawData = message.toString();
@@ -3284,7 +3444,56 @@
         const stsIdFromTopic = parseInt(match[1], 10);
 
         // --- PARSEO DE DATOS (Común para Historial y Análisis Buque) ---
-        const lines = rawData.split('\n').filter(line => line.trim() !== '');
+        let csvContent = rawData;
+        try {
+            const json = JSON.parse(rawData);
+            
+            // Validación: Si total_eventos es 0, no hay datos
+            if (json.total_eventos === 0) {
+                // Si estamos viendo el historial de esta grúa
+                if (currentStsHistoryId === stsIdFromTopic) {
+                    loader.style.display = "none";
+                    status.innerHTML = '<div style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 8px; border: 1px solid #f5c6cb; margin-top: 20px;"><strong>❌ Sin Datos</strong><br>No se encontraron registros para la fecha seleccionada.</div>';
+                    status.style.display = "block";
+                    
+                    // Limpiar UI
+                    document.querySelector('#kwhHistoryTable tbody').innerHTML = '';
+                    document.getElementById('dailyTotalDisplay').style.display = 'none';
+                    
+                    if (kwhChartInstance) { kwhChartInstance.destroy(); kwhChartInstance = null; }
+                    if (kwhWeeklyChartInstance) { kwhWeeklyChartInstance.destroy(); kwhWeeklyChartInstance = null; }
+                    if (kwhMinuteChartInstance) { kwhMinuteChartInstance.destroy(); kwhMinuteChartInstance = null; }
+                }
+                
+                // Si estamos en análisis de buque, registrar vacío
+                if (vesselAnalysisActive) {
+                    vesselDataStore[stsIdFromTopic] = [];
+                    const allReceived = Object.values(vesselDataStore).every(val => val !== null);
+                    if (allReceived) {
+                         const startVal = document.getElementById('vesselStart').value;
+                         const endVal = document.getElementById('vesselEnd').value;
+                         const name = document.getElementById('vesselName').value;
+                         processVesselResults(new Date(startVal).getTime(), new Date(endVal).getTime(), name);
+                    }
+                }
+                return; // Detener procesamiento
+            }
+
+            if (json.contenido_csv) {
+                csvContent = json.contenido_csv;
+            }
+            
+            // Mostrar nombre del archivo en el título si está disponible
+            if (json.archivo && currentStsHistoryId === stsIdFromTopic) {
+                 const filename = json.archivo.split(/[/\\]/).pop();
+                 const titleEl = document.getElementById('modalTitle');
+                 titleEl.innerHTML = `<span>📊</span> Historial KWH - STS ${stsIdFromTopic} <div style="font-size:0.5em; font-weight:normal; color:#666; margin-top:5px;">📄 ${filename}</div>`;
+            }
+        } catch (e) {
+            // No es JSON, se asume formato CSV directo
+        }
+
+        const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
         const parsedItems = [];
         
         lines.forEach(line => {
@@ -3354,7 +3563,7 @@
                 }
 
                 // Lógica especial para Turno 3 (23:00 - 08:00)
-                if (item.turno && item.turno.toLowerCase().includes("turno 3")) {
+                if (item.turno && (item.turno.toLowerCase().includes("turno 3") || item.turno.toLowerCase().includes("turno_3"))) {
                   // Normalizar hora: eliminar puntos y espacios para chequear am/pm
                   const cleanTime = item.hora.toLowerCase().replace(/\./g, '').replace(/\s/g, '');
                   
@@ -3381,9 +3590,9 @@
                 // Esto asegura que T3 (noche) quede ordenado correctamente respecto a T1 y T2
                 let shiftOrder = 0;
                 const tLower = item.turno ? item.turno.toLowerCase() : '';
-                if (tLower.includes('turno 1')) shiftOrder = 1;
-                else if (tLower.includes('turno 2')) shiftOrder = 2;
-                else if (tLower.includes('turno 3')) shiftOrder = 3;
+                if (tLower.includes('turno 1') || tLower.includes('turno_1')) shiftOrder = 1;
+                else if (tLower.includes('turno 2') || tLower.includes('turno_2')) shiftOrder = 2;
+                else if (tLower.includes('turno 3') || tLower.includes('turno_3')) shiftOrder = 3;
                 
                 // Timestamp base del día del turno + offset por turno
                 item.shiftSortKey = d.getTime() + (shiftOrder * 3600000);
@@ -3454,13 +3663,20 @@
                  return new Date(pb[2], pb[1]-1, pb[0]) - new Date(pa[2], pa[1]-1, pa[0]);
               });
 
-              uniqueDates.forEach(dateStr => {
+              // Mostrar SOLO la fecha más reciente (1 página, 3 datos)
+              if (uniqueDates.length > 0) {
+                 const dateStr = uniqueDates[0];
                  const dayItems = byDate[dateStr];
                  
                  // Buscar existentes
-                 const t1 = dayItems.find(i => i.turno.toLowerCase().includes('turno 1'));
-                 const t2 = dayItems.find(i => i.turno.toLowerCase().includes('turno 2'));
-                 const t3 = dayItems.find(i => i.turno.toLowerCase().includes('turno 3'));
+                 const t1 = dayItems.find(i => i.turno.toLowerCase().includes('turno 1') || i.turno.toLowerCase().includes('turno_1'));
+                 const t2 = dayItems.find(i => i.turno.toLowerCase().includes('turno 2') || i.turno.toLowerCase().includes('turno_2'));
+                 const t3 = dayItems.find(i => i.turno.toLowerCase().includes('turno 3') || i.turno.toLowerCase().includes('turno_3'));
+
+                 // Normalizar nombres de turnos para que se vean ordenados en la tabla
+                 if (t1) t1.turno = 'Turno 1 (08:00-15:30)';
+                 if (t2) t2.turno = 'Turno 2 (15:30-23:00)';
+                 if (t3) t3.turno = 'Turno 3 (23:00-06:30)';
 
                  // Helper para placeholder
                  const getPlaceholder = (name, order) => {
@@ -3480,10 +3696,10 @@
                  };
 
                  // Insertar en orden T3, T2, T1
-                 finalDisplayList.push(t3 || getPlaceholder('Turno 3 (23:00-08:00)', 3));
+                 finalDisplayList.push(t3 || getPlaceholder('Turno 3 (23:00-06:30)', 3));
                  finalDisplayList.push(t2 || getPlaceholder('Turno 2 (15:30-23:00)', 2));
                  finalDisplayList.push(t1 || getPlaceholder('Turno 1 (08:00-15:30)', 1));
-              });
+              }
 
               // Guardar datos procesados y renderizar tabla
               kwhData = finalDisplayList;
@@ -3545,18 +3761,26 @@
 
     // Manejo de los topics de KWH
     const kwhTopics = {
-      'KWH_STS1': 'kwh_sts1',
-      'KWH_STS2': 'kwh_sts2',
-      'KWH_STS3': 'kwh_sts3',
-      'KWH_STS4': 'kwh_sts4',
-      'KWH_STS5': 'kwh_sts5'
+      'valor_actual_kwh_sts1': 'kwh_sts1',
+      'valor_actual_kwh_sts2': 'kwh_sts2',
+      'valor_actual_kwh_sts3': 'kwh_sts3',
+      'valor_actual_kwh_sts4': 'kwh_sts4',
+      'valor_actual_kwh_sts5': 'kwh_sts5'
     };
 
     if (kwhTopics[topic]) {
       const value = parseFloat(message.toString());
       if (!isNaN(value)) {
         const elementId = kwhTopics[topic];
-        document.getElementById(elementId).innerHTML = `${value.toFixed(2)} <span class="sts-unit">kWh</span>`;
+        const el = document.getElementById(elementId);
+        // Actualizar valor y mostrar spinner
+        el.innerHTML = `${value.toFixed(0)} <span class="sts-unit">kWh</span> <span class="update-spinner active"></span>`;
+        
+        // Ocultar spinner después de 1 segundo
+        setTimeout(() => {
+            const spinner = el.querySelector('.update-spinner');
+            if (spinner) spinner.classList.remove('active');
+        }, 1000);
       }
     }
 
@@ -3835,7 +4059,7 @@
   
   function requestSlowDownData() {
     const dateVal = document.getElementById('slowDownDateInput').value;
-    if(!dateVal) { alert("Seleccione una fecha"); return; }
+    if(!dateVal) { showToast("Por favor seleccione una fecha", "error"); return; }
     
     document.getElementById('slowDownLoader').style.display = 'block';
     document.getElementById('slowDownMsg').style.display = 'none';
@@ -3852,7 +4076,8 @@
     
     // Publicar consulta con formato YYYY-MM-DD
     const topicConsulta = `consulta_SLOW_STS${window.currentSlowDownStsId}`;
-    console.log(`📤 Enviando consulta a: ${topicConsulta}, Mensaje: ${dateVal}`);
+    // console.log(`📤 Enviando consulta a: ${topicConsulta}, Mensaje: ${dateVal}`);
+    showToast(`Consultando datos STS${window.currentSlowDownStsId}...`, "info");
     client.publish(topicConsulta, dateVal);
     
     // Timeout para alertar si no hay respuesta (8 segundos)
@@ -3877,7 +4102,22 @@
   }
   setInterval(updateClock, 1000);
   updateClock(); // Ejecutar inmediatamente
+
+  // Función para mostrar notificaciones Toast
+  function showToast(message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<span>${type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️')}</span> ${message}`;
+    
+    container.appendChild(toast);
+    
+    // Eliminar después de 3 segundos
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut 0.5s forwards';
+      setTimeout(() => toast.remove(), 500);
+    }, 3000);
+  }
 </script>
 </body>
 </html>
-
