@@ -1,4 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // Lógica de Pantalla de Carga
+  const loader = document.getElementById('app-loader');
+  if (loader) {
+    // Mantenemos el loader visible por al menos 2.5 segundos para dar tiempo a la conexión
+    setTimeout(() => {
+      loader.classList.add('loader-hidden');
+      // Remover del DOM después de la transición CSS
+      setTimeout(() => {
+        loader.style.display = 'none';
+      }, 600);
+    }, 2500);
+  }
+
   // Variables para modo oscuro persistente
   const bodyEl = document.body;
   const darkToggle = document.getElementById('darkModeToggle');
@@ -48,7 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // MQTT y Chart.js con Zoom plugin
-  const client = mqtt.connect('wss://mqtt-dashboard.com:8884/mqtt');
+  const mqttOptions = {
+    keepalive: 60,
+    reconnectPeriod: 1000,
+    clean: true
+  };
+  const client = mqtt.connect('wss://mqtt-dashboard.com:8884/mqtt', mqttOptions);
   const ctx = document.getElementById('myChart').getContext('2d');
   
   // Variables globales para cálculo de FP
@@ -76,8 +94,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastDataTime = Date.now();
   const DATA_TIMEOUT = 15000; // 15 segundos sin datos = alerta
 
+  // Optimización: Manejo de reconexión al volver a la pestaña
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      lastDataTime = Date.now(); // Resetear watchdog para evitar falsa alarma
+      if (client && !client.connected && typeof client.reconnect === 'function') {
+        console.log('Pestaña visible: Forzando reconexión...');
+        client.reconnect();
+      }
+    }
+  });
+
   // Verificar flujo de datos periódicamente
   setInterval(() => {
+    if (document.hidden) return; // No verificar en segundo plano para evitar falsos positivos
+
     const statusEl = document.getElementById('connectionStatus');
     const textEl = document.getElementById('connText');
     
@@ -181,6 +212,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
   const myChart = new Chart(ctx, config);
+
+  // Optimización: Throttle para actualizaciones del gráfico principal
+  let myChartUpdatePending = false;
+  function requestMyChartUpdate() {
+    if (!myChartUpdatePending) {
+      myChartUpdatePending = true;
+      requestAnimationFrame(() => {
+        myChart.update();
+        myChartUpdatePending = false;
+      });
+    }
+  }
   
   // Configuración del Gráfico de Peaks
   const ctxPeak = document.getElementById('peakChart').getContext('2d');
@@ -551,6 +594,195 @@ document.addEventListener('DOMContentLoaded', () => {
       content.style.display = "block";
       arrow.innerHTML = "▲";
       btn.style.borderRadius = "8px 8px 0 0"; 
+    }
+  }
+
+  let consumoDataPoints = [];
+
+  window.openConsumptionModal = () => {
+    const modal = document.getElementById('regenModal');
+    if(modal) modal.style.display = 'block';
+    
+    // Actualizar UI con los datos que ya hayan llegado
+    requestAnimationFrame(() => {
+        updateConsumptionUI();
+    });
+    
+    // Mostrar estado si no hay datos
+    if (consumoDataPoints.length === 0) {
+        const status = document.getElementById('regenStatus');
+        if(status) {
+            status.textContent = "Esperando datos automáticos...";
+            status.style.color = "#0a3d66";
+        }
+        const loader = document.getElementById('regenLoader');
+        if(loader) loader.style.display = 'block';
+    }
+  }
+
+  window.closeConsumptionModal = () => {
+    const modal = document.getElementById('regenModal');
+    if(modal) modal.style.display = 'none';
+    
+    if (consumoChartInstance) {
+        consumoChartInstance.destroy();
+        consumoChartInstance = null;
+    }
+  }
+
+  function processEnergyData(csvContent) {
+    // 1. Procesamiento línea por línea (Más robusto)
+    const lines = csvContent.split(/\r?\n/);
+    const points = [];
+    
+    for (let line of lines) {
+        line = line.trim();
+        // Ignorar encabezados o líneas vacías
+        if (!line || line.toLowerCase().startsWith('fecha')) continue;
+
+        const tokens = line.split(',').map(t => t.trim());
+        if (tokens.length < 3) continue; // Requiere al menos Fecha, Hora, Valor
+
+        const dateStr = tokens[0];
+        const timeStr = tokens[1];
+        const valStr = tokens[2];
+        
+        let val = parseFloat(valStr);
+        if(isNaN(val)) continue;
+        
+        // Heurística: Si el valor es muy grande (>10000), asumir que son Watts y convertir a kW
+        if (val > 10000) val = val / 1000;
+        
+        const dParts = dateStr.split('-');
+        if(dParts.length !== 3) continue;
+        
+        let cleanTime = timeStr.toLowerCase().replace(/\./g, '').replace(/\s/g, '');
+        const tMatch = cleanTime.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})([ap]m)?/);
+        
+        if (tMatch) {
+            let h = parseInt(tMatch[1]);
+            const m = parseInt(tMatch[2]);
+            const s = parseInt(tMatch[3]);
+            const ampm = tMatch[4]; // am o pm
+            
+            if(ampm === 'pm' && h !== 12) h += 12;
+            if(ampm === 'am' && h === 12) h = 0;
+            
+            const dateObj = new Date(dParts[2], dParts[1]-1, dParts[0], h, m, s);
+            points.push({
+                t: dateObj.toLocaleString(),
+                y: val,
+                ms: dateObj.getTime()
+            });
+        }
+    }
+    return points.sort((a, b) => a.ms - b.ms);
+  }
+
+  function calculateEnergyStats(points) {
+    let totalEnergyKwh = 0;
+    let totalDurationMs = 0;
+    
+    for(let i = 0; i < points.length - 1; i++) {
+        const p1 = points[i];
+        const p2 = points[i+1];
+        const dtHours = (p2.ms - p1.ms) / (1000 * 3600); // Horas
+        
+        // Integración trapezoidal: (y1 + y2) / 2 * dt
+        // Asumimos que los puntos son Potencia (kW)
+        if(dtHours > 0 && dtHours < 1) { // Ignorar saltos grandes (>1h)
+            const avgPower = (Math.abs(p1.y) + Math.abs(p2.y)) / 2;
+            totalEnergyKwh += avgPower * dtHours;
+            totalDurationMs += (p2.ms - p1.ms);
+        }
+    }
+    
+    const minutes = Math.floor(totalDurationMs / 60000);
+    return { kwh: totalEnergyKwh, minutes: minutes };
+  }
+
+  function updateConsumptionUI() {
+    const loader = document.getElementById('regenLoader');
+    const status = document.getElementById('regenStatus');
+    
+    if(status && consumoDataPoints.length > 0) {
+        status.textContent = `Datos cargados: ${consumoDataPoints.length} registros.`;
+        status.style.color = "#28a745";
+    }
+    
+    // 1. Actualizar Tabla Consumo
+    const tbodyCons = document.querySelector('#consumoTable tbody');
+    if(tbodyCons) {
+        tbodyCons.innerHTML = '';
+        consumoDataPoints.sort((a, b) => a.ms - b.ms).forEach(p => {
+            const row = tbodyCons.insertRow();
+            row.innerHTML = `<td>${p.t}</td><td>${p.y.toFixed(2)}</td>`;
+        });
+    }
+
+    // 2. Calcular Totales
+    const consStats = calculateEnergyStats(consumoDataPoints);
+
+    // Helper para rango de fechas
+    const getDateRangeStr = (points) => {
+        if (!points || points.length === 0) return "Sin datos";
+        const sorted = [...points].sort((a, b) => a.ms - b.ms);
+        const start = sorted[0].t;
+        const end = sorted[sorted.length - 1].t;
+        return `Desde: ${start}<br>Hasta: ${end}`;
+    };
+
+    const consVal = document.getElementById('totalConsumoValue');
+    const consTime = document.getElementById('totalConsumoTime');
+    if(consVal) consVal.textContent = `${consStats.kwh.toFixed(2)} kWh`;
+    if(consTime) {
+        consTime.innerHTML = `${getDateRangeStr(consumoDataPoints)}<br>Duración: ${consStats.minutes} min aprox.<br><span style="font-size:0.85em; font-style:italic;">(Cálculo Aproximado)</span>`;
+    }
+
+    // 3. Gráfico Consumo
+    const ctxConsumoEl = document.getElementById('consumoChart');
+    if (ctxConsumoEl) {
+        const ctx = ctxConsumoEl.getContext('2d');
+        // Asegurar orden cronológico y separar labels/data para Chart.js
+        const sortedPoints = [...consumoDataPoints].sort((a, b) => a.ms - b.ms);
+        const labels = sortedPoints.map(p => p.t);
+        const dataValues = sortedPoints.map(p => p.y);
+
+        // Robustez: Si el canvas cambió (DOM refresh), destruir instancia previa
+        if (consumoChartInstance && consumoChartInstance.canvas !== ctxConsumoEl) {
+            consumoChartInstance.destroy();
+            consumoChartInstance = null;
+        }
+
+        if (consumoChartInstance) {
+            consumoChartInstance.data.labels = labels;
+            consumoChartInstance.data.datasets[0].data = dataValues;
+            consumoChartInstance.update();
+        } else {
+            consumoChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Consumo (kW)',
+                        data: dataValues,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { x: { display: false }, y: { beginAtZero: true, title: { display: true, text: 'Potencia (kW)' } } }
+                }
+            });
+        }
     }
   }
 
@@ -951,6 +1183,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const c2Modal = document.getElementById('currentModal');
     if (event.target == c2Modal) closeCurrentModal();
+
+    const rModal = document.getElementById('regenModal');
+    if (event.target == rModal) closeConsumptionModal();
     
     if (event.target == document.getElementById('slowDownModal')) closeSlowDownModal();
   }
@@ -998,6 +1233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     client.subscribe('CORRIENTE_C');
     client.subscribe('CORRIENTE_N');
     client.subscribe('CORRIENTE_TIERRA');
+    client.subscribe('RESPUESTA_CONSUMO');
     client.subscribe(['valor_actual_kwh_sts1', 'valor_actual_kwh_sts2', 'valor_actual_kwh_sts3', 'valor_actual_kwh_sts4', 'valor_actual_kwh_sts5'], (err) => {
       if (!err) {
         const requestKwhNow = () => {
@@ -1096,7 +1332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const chartLoader = document.getElementById('myChartLoader');
         if(chartLoader) chartLoader.style.display = 'none';
-        myChart.update();
+        requestMyChartUpdate();
       }
     }
     if (topic === 'I_MAX_GRUAS') {
@@ -1116,7 +1352,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const chartLoader = document.getElementById('myChartLoader');
         if(chartLoader) chartLoader.style.display = 'none';
-        myChart.update();
+        requestMyChartUpdate();
       }
     }
     
@@ -1251,21 +1487,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (topic === 'ACTIVE_TOTAL') {
             const descEl = document.getElementById('desc_ACTIVE_TOTAL');
-            const cardEl = document.getElementById('card_ACTIVE_TOTAL');
-            if (descEl && cardEl) {
-                if (val < 0) {
-                    descEl.innerHTML = '♻️ REGENERANDO ENERGÍA';
-                    descEl.style.color = '#fff'; 
-                    descEl.style.fontWeight = 'bold';
-                    descEl.style.fontSize = '0.9rem';
-                    cardEl.classList.add('regenerating-mode');
-                } else {
-                    descEl.innerHTML = '🔌 Consumiendo de Red';
-                    descEl.style.color = 'rgba(255,255,255,0.9)';
-                    descEl.style.fontWeight = 'normal';
-                    descEl.style.fontSize = '0.75rem';
-                    cardEl.classList.remove('regenerating-mode');
-                }
+            if (descEl) {
+                descEl.innerHTML = '🔌 Consumiendo de Red';
+                descEl.style.color = 'rgba(255,255,255,0.9)';
+                descEl.style.fontWeight = 'normal';
+                descEl.style.fontSize = '0.75rem';
             }
         }
 
@@ -1283,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    if ((topic.startsWith('KWH_STS') && topic.endsWith('_archivo_KWH')) || topic.startsWith('respuesta_hist_kwh_STS')) {
+    if (topic.startsWith('respuesta_hist_kwh_STS')) {
       const status = document.getElementById('modalStatus');
       const loader = document.getElementById('modalLoader');
       const rawData = message.toString();
@@ -1605,6 +1831,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if(lastPeakLoader) lastPeakLoader.style.display = 'none';
         if(lastPeakContent) lastPeakContent.style.display = 'block';
       }
+    }
+
+    // Manejo de respuestas de Consumo
+    if (topic === 'RESPUESTA_CONSUMO') {
+        const rawData = message.toString();
+        let csvContent = rawData;
+        try {
+            const json = JSON.parse(rawData);
+            if(json.contenido_csv) csvContent = json.contenido_csv;
+        } catch(e) {}
+
+        consumoDataPoints = processEnergyData(csvContent);
+
+        // Actualizar UI si el modal está abierto
+        const modal = document.getElementById('regenModal');
+        if(modal && modal.style.display === 'block') {
+            const loader = document.getElementById('regenLoader');
+            if(loader) loader.style.display = 'none';
+            updateConsumptionUI();
+        }
     }
 
     if (topic.startsWith('respuesta_SLOW_STS')) {
