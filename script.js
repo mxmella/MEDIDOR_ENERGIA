@@ -1,15 +1,48 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // Lógica de Pantalla de Carga
-  const loader = document.getElementById('app-loader');
-  if (loader) {
-    // Mantenemos el loader visible por al menos 2.5 segundos para dar tiempo a la conexión
-    setTimeout(() => {
-      loader.classList.add('loader-hidden');
-      // Remover del DOM después de la transición CSS
+  // --- LÓGICA DE LOGIN ---
+  const loginScreen = document.getElementById('login-screen');
+  const mainContainer = document.getElementById('main-container');
+  const loginForm = document.getElementById('login-form');
+  const loginError = document.getElementById('login-error');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = e.target.username.value;
+      const password = e.target.password.value;
+
+      // USUARIO Y CONTRASEÑA (cambiar en un entorno de producción)
+      if (username === 'mantencion' && password === 'mantencion') {
+        loginScreen.style.display = 'none';
+        mainContainer.style.display = 'block';
+        // Una vez logueado, inicializamos la aplicación
+        initializeApp();
+      } else {
+        loginError.textContent = 'Usuario o contraseña incorrectos.';
+        // Limpiar el mensaje de error después de 3 segundos
+        setTimeout(() => {
+          loginError.textContent = '';
+        }, 3000);
+      }
+    });
+  }
+
+  // La inicialización de la app se mueve a esta función
+  function initializeApp() {
+    // Lógica de Pantalla de Carga
+    const loader = document.getElementById('app-loader');
+    if (loader) {
+      // Mantenemos el loader visible por al menos 2.5 segundos para dar tiempo a la conexión
       setTimeout(() => {
-        loader.style.display = 'none';
-      }, 600);
-    }, 2500);
+        loader.classList.add('loader-hidden');
+        // Remover del DOM después de la transición CSS
+        setTimeout(() => {
+          loader.style.display = 'none';
+        }, 600);
+      }, 2500);
+    }
+
+    // El resto del código original va aquí...
   }
 
   // Variables para modo oscuro persistente
