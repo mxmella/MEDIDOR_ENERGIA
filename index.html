@@ -13,27 +13,6 @@
   
 </head>
 <body>
-  <!-- Pantalla de Login -->
-  <div id="login-screen">
-    <div class="login-box">
-      <img src="logo puerto.png" alt="Logo" class="login-logo">
-      <h2>Gestión Energética</h2>
-      <form id="login-form">
-        <div class="input-group">
-          <label for="username">Usuario</label>
-          <input type="text" id="username" name="username" required autocomplete="username">
-        </div>
-        <div class="input-group">
-          <label for="password">Contraseña</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password">
-        </div>
-        <button type="submit" id="login-button">Ingresar</button>
-        <p id="login-error" class="login-error-message"></p>
-      </form>
-    </div>
-  </div>
-
-<div id="main-container" style="display: none;">
   <!-- Pantalla de Carga Inicial -->
   <div id="app-loader">
     <div class="loader-content">
@@ -50,7 +29,23 @@
     </div>
   </div>
 
-  <div id="print-page-one">
+  <!-- Pantalla de Login -->
+  <div id="login-overlay">
+    <div class="login-container">
+      <img src="logo puerto.png" alt="Logo" class="login-logo">
+      <h2>Acceso al Sistema</h2>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="Usuario" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <button type="submit">Ingresar</button>
+        <p id="login-error-message" style="display: none; color: #dc3545; margin-top: 10px;">Usuario o contraseña incorrectos.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Contenido Principal de la Aplicación (inicialmente oculto) -->
+  <main id="main-content" style="display: none; width: 100%; display: flex; flex-direction: column; align-items: center;">
+    <div id="print-page-one">
   <header class="main-header">
     <div class="header-left">
       <img id="logo-fijo" src="logo puerto.png" alt="Logo" />
@@ -64,51 +59,56 @@
       <div id="connectionStatus"><span class="status-led"></span><span id="connText">Desconectado</span></div>
       <button id="reportBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Informe</button>
       <button id="darkModeToggle" title="Alternar modo oscuro">Modo oscuro</button>
+      <button id="logoutBtn" title="Cerrar Sesión" style="display: none;"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Salir</button>
     </div>
   </header>
 
   <!-- Recuadros Principales -->
   <div class="dashboard-grid main-metrics">
-    <div id="topic1-cell" class="sts-box" style="background: linear-gradient(135deg, #0a72c1, #0a3d66); cursor: pointer;" onclick="openCgeModal()">
+    <div id="topic1-cell" class="metric-card metric-card--primary" style="cursor: pointer;" onclick="openCgeModal()">
       <!-- Icono Rayo -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
-      <div class="sts-title" style="color: #fff;">Medidor CGE</div>
+      <div class="metric-title">Medidor CGE</div>
       <div id="topic1Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic1Content" style="display: none;">
-        <div id="topic1" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+        <div id="topic1" class="metric-value">-- <span class="sts-unit">Amp</span></div>
       </div>
       <div class="card-action-prompt">
         <span>Ver Detalles</span>
         <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
       </div>
     </div>
-    <div id="topic2-cell" class="sts-box" style="background: linear-gradient(135deg, #ffc72c, #e0a800); color: #0a3d66;">
+    <div id="topic2-cell" class="metric-card metric-card--accent">
       <!-- Icono Actividad/Pulso -->
-      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #0a3d66; opacity: 0.15;"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-      <div class="sts-title" style="color: #0a3d66;">Consumo Grúas</div>
+      <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+      <div class="metric-title">Consumo Grúas</div>
       <div id="topic2Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic2Content" style="display: none;">
-        <div id="topic2" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+        <div id="topic2" class="metric-value">-- <span class="sts-unit">Amp</span></div>
       </div>
     </div>
-    <div id="last-peak-cell" class="sts-box" style="background: linear-gradient(135deg, #dc3545, #c82333);">
+    <div id="last-peak-cell" class="metric-card metric-card--danger">
       <!-- Icono Tendencia Subida -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-      <div class="sts-title" style="color: #fff;">Último Peak</div>
+      <div class="metric-title">Último Peak</div>
       <div id="lastPeakLoader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="lastPeakContent" style="display: none;">
-        <div id="lastPeakValue" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="lastPeakDate" class="sts-data" style="font-size: 1.1rem; margin-top: 5px; font-weight: 400;">--</div>
+        <div id="lastPeakValue" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="lastPeakDate" class="metric-value" style="font-size: 1.1rem; font-weight: 400;">--</div>
       </div>
     </div>
-    <div id="topic8-cell" class="sts-box" style="background: linear-gradient(135deg, #28a745, #1c6b2e);">
+    <div id="topic8-cell" class="metric-card metric-card--success">
       <!-- Icono Viento -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>
-      <div class="sts-title">Viento</div>
+      <div class="metric-title">Viento</div>
       <div id="topic8Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic8Content" style="display: none;">
-        <div id="Viento_STS1" class="sts-data" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
-        <div id="topic8" class="sts-data" style="font-size: 1.2rem; margin-top: 5px;">-- <span class="sts-unit">Nudos</span> | -- <span class="sts-unit">km/h</span></div>
+        <div id="Viento_STS1" class="metric-value" style="font-size: 2.5rem;">-- <span class="sts-unit">m/s</span></div>
+        <div id="topic8" class="metric-value" style="font-size: 1.2rem; margin-top: 5px;">-- <span class="sts-unit">Nudos</span> | -- <span class="sts-unit">km/h</span></div>
+        <button class="btn-history" onclick="openWindHistory()">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          Historial Viento
+        </button>
       </div>
       <!-- <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div> -->
     </div>
@@ -116,14 +116,14 @@
   
    <!-- Nuevos topics I_STS1, I_STS2, I_STS3, I_STS4, I_STS5 -->
   <div class="dashboard-grid">
-    <div id="topic3-cell" class="sts-box">
+    <div id="topic3-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS1) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
-      <div class="sts-title">STS1</div>
+      <div class="metric-title">STS1</div>
       <div id="topic3Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic3Content" style="display: none;">
-        <div id="topic3" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="kwh_sts1" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+        <div id="topic3" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="kwh_sts1" class="metric-value">-- <span class="sts-unit">kWh</span></div>
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts1" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(1)">
@@ -136,14 +136,14 @@
         </button>
       </div>
     </div>
-    <div id="topic4-cell" class="sts-box">
+    <div id="topic4-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS2) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
-      <div class="sts-title">STS2</div>
+      <div class="metric-title">STS2</div>
       <div id="topic4Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic4Content" style="display: none;">
-        <div id="topic4" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="kwh_sts2" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+        <div id="topic4" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="kwh_sts2" class="metric-value">-- <span class="sts-unit">kWh</span></div>
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts2" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(2)">
@@ -156,14 +156,14 @@
         </button>
       </div>
     </div>
-    <div id="topic5-cell" class="sts-box">
+    <div id="topic5-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS3) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
-      <div class="sts-title">STS3</div>
+      <div class="metric-title">STS3</div>
       <div id="topic5Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic5Content" style="display: none;">
-        <div id="topic5" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="kwh_sts3" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+        <div id="topic5" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="kwh_sts3" class="metric-value">-- <span class="sts-unit">kWh</span></div>
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts3" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(3)">
@@ -176,14 +176,14 @@
         </button>
       </div>
     </div>
-    <div id="topic6-cell" class="sts-box">
+    <div id="topic6-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS4) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
-      <div class="sts-title">STS4</div>
+      <div class="metric-title">STS4</div>
       <div id="topic6Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic6Content" style="display: none;">
-        <div id="topic6" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="kwh_sts4" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+        <div id="topic6" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="kwh_sts4" class="metric-value">-- <span class="sts-unit">kWh</span></div>
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts4" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(4)">
@@ -196,14 +196,14 @@
         </button>
       </div>
     </div>
-    <div id="topic7-cell" class="sts-box">
+    <div id="topic7-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS5) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
-      <div class="sts-title">STS5</div>
+      <div class="metric-title">STS5</div>
       <div id="topic7Loader" class="loader" style="display: block; border-color: rgba(255,255,255,0.2); border-top-color: #fff;"></div>
       <div id="topic7Content" style="display: none;">
-        <div id="topic7" class="sts-data">-- <span class="sts-unit">Amp</span></div>
-        <div id="kwh_sts5" class="sts-data">-- <span class="sts-unit">kWh</span></div>
+        <div id="topic7" class="metric-value">-- <span class="sts-unit">Amp</span></div>
+        <div id="kwh_sts5" class="metric-value">-- <span class="sts-unit">kWh</span></div>
         <div class="slow-down-legend" style="display: none;">GRUA EN SLOW DOWN</div>
         <div id="last_slow_sts5" class="last-slow-info"></div>
         <button class="btn-history" onclick="openHistory(5)">
@@ -227,56 +227,56 @@
       </div>
       <div class="modal-body-custom">
         <div class="dashboard-grid" style="max-width: 100%;">
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66); cursor: pointer;" onclick="openCurrentModal()">
-              <div class="sts-title" style="font-size: 0.9rem;">Corriente Total</div>
-              <div id="val_CGE_AMP" class="sts-data">-- <span class="sts-unit">Amp</span></div>
+           <div class="metric-card" onclick="openCurrentModal()">
+              <div class="metric-title" style="font-size: 0.9rem;">Corriente Total</div>
+              <div id="val_CGE_AMP" class="metric-value">-- <span class="sts-unit">Amp</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Amperaje Instantáneo</div>
               <div class="card-action-prompt">
                 <span>Ver Fases</span>
                 <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66); cursor: pointer;" onclick="openVoltageModal()">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje Promedio L-L</div>
-              <div id="val_VOLT_L_L_AVG" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card" onclick="openVoltageModal()">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje Promedio L-L</div>
+              <div id="val_VOLT_L_L_AVG" class="metric-value">-- <span class="sts-unit">kV</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Media Tensión</div>
               <div class="card-action-prompt">
                 <span>Ver Fases</span>
                 <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
            </div>
-           <div id="card_ACTIVE_TOTAL" class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66); cursor: pointer;" onclick="openConsumptionModal()">
-              <div class="sts-title" style="font-size: 0.9rem;">Potencia Activa Total</div>
-              <div id="val_ACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kW</span></div>
+           <div id="card_ACTIVE_TOTAL" class="metric-card" onclick="openConsumptionModal()">
+              <div class="metric-title" style="font-size: 0.9rem;">Potencia Activa Total</div>
+              <div id="val_ACTIVE_TOTAL" class="metric-value">-- <span class="sts-unit">kW</span></div>
               <div id="desc_ACTIVE_TOTAL" style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Active Power (Real)</div>
               <div class="card-action-prompt">
                 <span>Ver Análisis</span>
                 <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
               </div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66);">
-              <div class="sts-title" style="font-size: 0.9rem;">Potencia Reactiva Total</div>
-              <div id="val_REACTIVE_TOTAL" class="sts-data">-- <span class="sts-unit">kVAR</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Potencia Reactiva Total</div>
+              <div id="val_REACTIVE_TOTAL" class="metric-value">-- <span class="sts-unit">kVAR</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Reactive Power</div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66);">
-              <div class="sts-title" style="font-size: 0.9rem;">Potencia Aparente Total</div>
-              <div id="val_APARENTE_TOTAL" class="sts-data">-- <span class="sts-unit">kVA</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Potencia Aparente Total</div>
+              <div id="val_APARENTE_TOTAL" class="metric-value">-- <span class="sts-unit">kVA</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Apparent Power (Total)</div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66);">
-              <div class="sts-title" style="font-size: 0.9rem;">Factor de Potencia</div>
-              <div id="val_FACTOR_POTENCIA" class="sts-data">--</div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Factor de Potencia</div>
+              <div id="val_FACTOR_POTENCIA" class="metric-value">--</div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Eficiencia (kW / kVA)</div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66);">
-              <div class="sts-title" style="font-size: 0.9rem;">Desbalance Voltaje L-N</div>
-              <div id="val_VOLT_UB_L_N_WOR" class="sts-data">-- <span class="sts-unit">%</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Desbalance Voltaje L-N</div>
+              <div id="val_VOLT_UB_L_N_WOR" class="metric-value">-- <span class="sts-unit">%</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Volt Unbalance Worst</div>
            </div>
-           <div class="sts-box" style="background: linear-gradient(135deg, #0a5a9c, #0a3d66);">
-              <div class="sts-title" style="font-size: 0.9rem;">Desbalance Corriente (Worst)</div>
-              <div id="val_CU_UN_WOR" class="sts-data">-- <span class="sts-unit">%</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Desbalance Corriente (Worst)</div>
+              <div id="val_CU_UN_WOR" class="metric-value">-- <span class="sts-unit">%</span></div>
               <div style="font-size: 0.75rem; opacity: 0.9; margin-top: 5px;">Current Unbalance</div>
            </div>
         </div>
@@ -358,42 +358,42 @@
         <span class="close-modal" onclick="closeVoltageModal()">&times;</span>
       </div>
       <div class="modal-body-custom">
-        <h3 style="margin-top: 0; margin-bottom: 10px; color: #0a3d66; font-size: 1rem;">Voltajes de Línea (L-L)</h3>
+        <h3 class="modal-subtitle">Voltajes de Línea (L-L)</h3>
         <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje A-B</div>
-              <div id="val_VOLTAJE_A-B" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje A-B</div>
+              <div id="val_VOLTAJE_A-B" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje B-C</div>
-              <div id="val_VOLTAJE_B-C" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje B-C</div>
+              <div id="val_VOLTAJE_B-C" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje C-A</div>
-              <div id="val_VOLTAJE_C-A" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje C-A</div>
+              <div id="val_VOLTAJE_C-A" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
         </div>
         <div class="chart-container-modal" style="height: 250px; margin-bottom: 20px;">
             <canvas id="voltagePhasesChart"></canvas>
         </div>
 
-        <h3 style="margin-top: 10px; margin-bottom: 10px; color: #0a3d66; font-size: 1rem; border-top: 1px solid #eee; padding-top: 20px;">Voltajes de Fase (L-N)</h3>
+        <h3 class="modal-subtitle" style="border-top: 1px solid var(--color-border); padding-top: 20px;">Voltajes de Fase (L-N)</h3>
         <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
-           <div class="sts-box" style="background: #17a2b8;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje A-N</div>
-              <div id="val_VOLTAJE_A-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje A-N</div>
+              <div id="val_VOLTAJE_A-N" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
-           <div class="sts-box" style="background: #17a2b8;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje B-N</div>
-              <div id="val_VOLTAJE_B-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje B-N</div>
+              <div id="val_VOLTAJE_B-N" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
-           <div class="sts-box" style="background: #17a2b8;">
-              <div class="sts-title" style="font-size: 0.9rem;">Voltaje C-N</div>
-              <div id="val_VOLTAJE_C-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Voltaje C-N</div>
+              <div id="val_VOLTAJE_C-N" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
-           <div class="sts-box" style="background: #17a2b8;">
-              <div class="sts-title" style="font-size: 0.9rem;">Promedio L-N</div>
-              <div id="val_VOLTAJE_TOTAL_L-N" class="sts-data">-- <span class="sts-unit">kV</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Promedio L-N</div>
+              <div id="val_VOLTAJE_TOTAL_L-N" class="metric-value">-- <span class="sts-unit">kV</span></div>
            </div>
         </div>
 
@@ -412,34 +412,34 @@
         <span class="close-modal" onclick="closeCurrentModal()">&times;</span>
       </div>
       <div class="modal-body-custom">
-        <h3 style="margin-top: 0; margin-bottom: 10px; color: #0a3d66; font-size: 1rem;">Corrientes de Fase</h3>
+        <h3 class="modal-subtitle">Corrientes de Fase</h3>
         <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 10px;">
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Fase A</div>
-              <div id="val_CORRIENTE_A" class="sts-data">-- <span class="sts-unit">A</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Fase A</div>
+              <div id="val_CORRIENTE_A" class="metric-value">-- <span class="sts-unit">A</span></div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Fase B</div>
-              <div id="val_CORRIENTE_B" class="sts-data">-- <span class="sts-unit">A</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Fase B</div>
+              <div id="val_CORRIENTE_B" class="metric-value">-- <span class="sts-unit">A</span></div>
            </div>
-           <div class="sts-box" style="background: #0a72c1;">
-              <div class="sts-title" style="font-size: 0.9rem;">Fase C</div>
-              <div id="val_CORRIENTE_C" class="sts-data">-- <span class="sts-unit">A</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Fase C</div>
+              <div id="val_CORRIENTE_C" class="metric-value">-- <span class="sts-unit">A</span></div>
            </div>
         </div>
         <div class="chart-container-modal" style="height: 250px; margin-bottom: 20px;">
             <canvas id="currentPhasesChart"></canvas>
         </div>
 
-        <h3 style="margin-top: 10px; margin-bottom: 10px; color: #0a3d66; font-size: 1rem; border-top: 1px solid #eee; padding-top: 20px;">Corrientes Neutro y Tierra</h3>
+        <h3 class="modal-subtitle" style="border-top: 1px solid var(--color-border); padding-top: 20px;">Corrientes Neutro y Tierra</h3>
         <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 10px;">
-           <div class="sts-box" style="background: #17a2b8;">
-              <div class="sts-title" style="font-size: 0.9rem;">Neutro (N)</div>
-              <div id="val_CORRIENTE_N" class="sts-data">-- <span class="sts-unit">A</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Neutro (N)</div>
+              <div id="val_CORRIENTE_N" class="metric-value">-- <span class="sts-unit">A</span></div>
            </div>
-           <div class="sts-box" style="background: #6c757d;">
-              <div class="sts-title" style="font-size: 0.9rem;">Tierra (G)</div>
-              <div id="val_CORRIENTE_TIERRA" class="sts-data">-- <span class="sts-unit">A</span></div>
+           <div class="metric-card">
+              <div class="metric-title" style="font-size: 0.9rem;">Tierra (G)</div>
+              <div id="val_CORRIENTE_TIERRA" class="metric-value">-- <span class="sts-unit">A</span></div>
            </div>
         </div>
 
@@ -484,22 +484,28 @@
 
     <!-- Lado Derecho: Tabla -->
     <div class="peak-table-wrapper">
+      <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+        <div style="flex: 1;">
+          <label for="peakDateInput" style="display: block; margin-bottom: 5px; font-weight: 600;">Seleccionar Fecha:</label>
+          <input type="date" id="peakDateInput" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-size: 1rem;">
+        </div>
+        <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestPeakHistoryData()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Consultar</button>
+      </div>
       <div style="text-align: center; margin-bottom: 15px;">
         <h3 style="margin: 0 0 5px 0;">Registro Detallado</h3>
         <div id="dataStatus" style="font-size: 0.9rem; font-weight: 600; opacity: 0.9;">
           <span id="historyIndicator" style="transition: color 0.3s;">🗂️ Historial: Esperando...</span>
         </div>
         <div id="mainTableLoader" class="loader" style="display: block;"></div>
-        <div id="historyDateRange" style="font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: none;">
-          Muestreo desde <strong id="firstDate">--</strong> hasta <strong id="lastDate">--</strong>
-        </div>
       </div>
       <div class="table-container">
         <table id="peakHistoryTable">
           <thead>
             <tr>
-              <th scope="col">Fecha y Hora</th>
-              <th scope="col">Valor del Peak (Amp)</th>
+              <th scope="col">ID</th>
+              <th scope="col">Fecha</th>
+              <th scope="col">Hora</th>
+              <th scope="col">Valor (Amp)</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -513,12 +519,12 @@
     </div>
     </div>
   </div>
+</div>
 
   <footer>
     © 2026 Desarrollado por Horacio Mella O. – Ing. Electrónico / Ing. Eléctrico – Depto. Marítimo
   </footer>
-
-  </div>
+  </main>
 
   <!-- Modal para Historial KWH -->
   <div id="kwhModal" class="modal">
@@ -545,34 +551,33 @@
           <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestKwhHistoryData()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Consultar</button>
         </div>
 
-        <div id="dailyTotalDisplay" class="daily-total-box" style="display: none;">
-          <div id="dailyTotalLabel" class="daily-total-label">Consumo Total Día</div>
-          <div id="dailyTotalValue" class="daily-total-value">-- kWh</div>
-          <div class="daily-total-note">
-            * Nota: El cálculo de consumo acumulado y la visualización de datos se procesan en la ventana operativa de 08:00 a 00:00 h.
-          </div>
-        </div>
-      
         <div class="charts-wrapper">
           <div class="chart-container-modal"><canvas id="kwhShiftChart"></canvas></div>
         </div>
 
         <div id="modalLoader" class="loader"></div>
         <div id="modalStatus" style="font-style: italic; color: #666; margin-bottom: 10px; text-align: center; display: none;">Cargando datos...</div>
-      
-        <!-- Tabla paginada para KWH -->
-        <div class="table-container" style="max-height: 350px; overflow-y: auto;">
-          <table id="kwhHistoryTable">
-            <thead>
-              <tr><th>Fecha y Hora</th><th>Turno</th><th>Energía</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div id="kwhPagination" style="display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px;">
-          <button id="btnKwhPrev" disabled>Anterior</button>
-          <span id="pageKwhInfo">Página 1 de 1</span>
-          <button id="btnKwhNext" disabled>Siguiente</button>
+
+        <!-- Tabla de datos con búsqueda y paginación -->
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+            <label for="kwhTimeInput" style="font-weight: 600;">Filtrar por hora:</label>
+            <input type="time" id="kwhTimeInput" onchange="filterKwhTable()" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem;">
+            <button onclick="clearKwhFilter()" style="padding: 8px 12px; font-size: 0.8rem; border-radius: 6px;">Limpiar Filtro</button>
+          </div>
+          <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+            <table id="kwhHistoryTable">
+              <thead>
+                <tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Energía (kWh)</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="kwhPagination" style="display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px;">
+            <button id="btnKwhPrev" disabled>Anterior</button>
+            <span id="pageKwhInfo">Página 1 de 1</span>
+            <button id="btnKwhNext" disabled>Siguiente</button>
+          </div>
         </div>
       </div>
     </div>
@@ -606,10 +611,9 @@
           <table id="slowDownTable">
             <thead>
               <tr>
-                <th>Fecha/Hora</th>
-                <th>Tipo</th>
+                <th>Fecha</th>
+                <th>Hora</th>
                 <th>Estado</th>
-                <th>Evento</th>
                 <th>Duración</th>
               </tr>
             </thead>
@@ -655,10 +659,57 @@
     </div>
   </div>
 
+  <!-- Modal para Historial de Viento -->
+  <div id="windModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header-custom">
+        <h2 id="windModalTitle"><span>🌬️</span> Historial de Viento</h2>
+        <span class="close-modal" onclick="closeWindHistory()">&times;</span>
+      </div>
+      <div class="modal-body-custom">
+        <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+          <div style="flex: 1;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Seleccionar Fecha:</label>
+            <input type="date" id="windDateInput" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; width: 100%; font-size: 1rem;">
+          </div>
+          <button class="btn-calc" style="width: auto; padding: 0 25px;" onclick="requestWindHistoryData()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> Consultar</button>
+        </div>
+
+        <div class="charts-wrapper">
+          <div class="chart-container-modal"><canvas id="windChart"></canvas></div>
+        </div>
+
+        <div id="windModalLoader" class="loader"></div>
+        <div id="windModalStatus" style="font-style: italic; color: #666; margin-bottom: 10px; text-align: center; display: none;">Cargando datos...</div>
+
+        <!-- Tabla de datos -->
+        <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+            <label for="windTimeInput" style="font-weight: 600;">Filtrar por hora:</label>
+            <input type="time" id="windTimeInput" onchange="filterWindTable()" style="padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem;">
+            <button onclick="clearWindFilter()" style="padding: 8px 12px; font-size: 0.8rem; border-radius: 6px;">Limpiar Filtro</button>
+          </div>
+          <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+            <table id="windHistoryTable">
+              <thead>
+                <tr><th>ID</th><th>Fecha</th><th>Hora</th><th>Velocidad (m/s)</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="windPagination" style="display: flex; justify-content: center; align-items: center; margin-top: 15px; gap: 10px;">
+            <button id="btnWindPrev" disabled>Anterior</button>
+            <span id="pageWindInfo">Página 1 de 1</span>
+            <button id="btnWindNext" disabled>Siguiente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Contenedor de Notificaciones -->
   <div id="toast-container"></div>
 
 <script src="script.js"></script>
-</div>
 </body>
 </html>

@@ -1,34 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // --- LÓGICA DE LOGIN ---
-  const loginScreen = document.getElementById('login-screen');
-  const mainContainer = document.getElementById('main-container');
+  // --- LÓGICA DE AUTENTICACIÓN Y SESIÓN ---
+  // Puedes cambiar el usuario y contraseña aquí
+  const CORRECT_USER = 'admin';
+  const CORRECT_PASS = 'admin';
+
+  const loginOverlay = document.getElementById('login-overlay');
+  const mainContent = document.getElementById('main-content');
   const loginForm = document.getElementById('login-form');
-  const loginError = document.getElementById('login-error');
+  const loginError = document.getElementById('login-error-message');
+  const logoutBtn = document.getElementById('logoutBtn');
 
-  if (loginForm) {
-    loginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const username = e.target.username.value;
-      const password = e.target.password.value;
+  // Función para mostrar el contenido principal
+  const showMainContent = () => {
+    if (loginOverlay) loginOverlay.style.display = 'none';
+    if (mainContent) mainContent.style.display = 'flex';
+    if (logoutBtn) logoutBtn.style.display = 'inline-flex';
 
-      // USUARIO Y CONTRASEÑA (cambiar en un entorno de producción)
-      if (username === 'mantencion' && password === 'mantencion') {
-        loginScreen.style.display = 'none';
-        mainContainer.style.display = 'block';
-        // Una vez logueado, inicializamos la aplicación
-        initializeApp();
-      } else {
-        loginError.textContent = 'Usuario o contraseña incorrectos.';
-        // Limpiar el mensaje de error después de 3 segundos
-        setTimeout(() => {
-          loginError.textContent = '';
-        }, 3000);
-      }
-    });
-  }
-
-  // La inicialización de la app se mueve a esta función
-  function initializeApp() {
     // Lógica de Pantalla de Carga
     const loader = document.getElementById('app-loader');
     if (loader) {
@@ -41,8 +28,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 600);
       }, 2500);
     }
+  };
 
-    // El resto del código original va aquí...
+  // Comprobar si ya está autenticado en la sesión
+  if (sessionStorage.getItem('isAuthenticated') === 'true') {
+    showMainContent();
+  } else {
+    if (loginOverlay) loginOverlay.style.display = 'flex';
+    const appLoader = document.getElementById('app-loader');
+    if (appLoader) appLoader.style.display = 'none'; // Ocultar loader si no está logueado
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      if (username === CORRECT_USER && password === CORRECT_PASS) {
+        sessionStorage.setItem('isAuthenticated', 'true');
+        showMainContent();
+      } else {
+        if (loginError) loginError.style.display = 'block';
+      }
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      sessionStorage.removeItem('isAuthenticated');
+      // Recargar la página para volver al estado de login
+      window.location.reload();
+    });
   }
 
   // Variables para modo oscuro persistente
@@ -52,6 +69,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if(savedTheme === 'dark') {
    bodyEl.classList.add('dark-mode');
     if(darkToggle) darkToggle.textContent = 'Modo claro';
+    // Llamar a la función aquí para asegurar que los gráficos se inicialicen con los colores correctos
+    setTimeout(() => {
+      updateChartColors();
+    }, 50);
   }
 
   if(darkToggle) {
@@ -63,6 +84,33 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         darkToggle.textContent = 'Modo oscuro';
         localStorage.setItem('theme', 'light');
+      }
+      // Actualizar colores de los gráficos al cambiar de tema
+      updateChartColors();
+    });
+  }
+
+  // Función para actualizar colores de los gráficos
+  function updateChartColors() {
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    const textColor = isDarkMode ? getComputedStyle(document.body).getPropertyValue('--color-text-dark').trim() : getComputedStyle(document.body).getPropertyValue('--color-text-light').trim();
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+
+    const charts = [myChart, peakChart, kwhChartInstance, windChartInstance, cgePowerChart, cgeUnbalanceChart, cgeVoltageChart, voltagePhasesChart, voltageLNChart, currentPhasesChart, currentNGChart, window.slowDownChartInstance];
+
+    charts.forEach(chart => {
+      if (chart && chart.options) {
+        if (chart.options.plugins && chart.options.plugins.legend) {
+          chart.options.plugins.legend.labels.color = textColor;
+        }
+        if (chart.options.scales) {
+          Object.keys(chart.options.scales).forEach(axis => {
+            if (chart.options.scales[axis].ticks) chart.options.scales[axis].ticks.color = textColor;
+            if (chart.options.scales[axis].title) chart.options.scales[axis].title.color = textColor;
+            if (chart.options.scales[axis].grid) chart.options.scales[axis].grid.color = gridColor;
+          });
+        }
+        chart.update('none');
       }
     });
   }
@@ -159,12 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Crear degradados para el gráfico principal
   const gradientCGE = ctx.createLinearGradient(0, 0, 0, 400);
-  gradientCGE.addColorStop(0, 'rgba(10, 114, 193, 0.6)');
-  gradientCGE.addColorStop(1, 'rgba(10, 114, 193, 0.05)');
+  gradientCGE.addColorStop(0, 'rgba(71, 85, 105, 0.6)'); // Slate 600
+  gradientCGE.addColorStop(1, 'rgba(51, 65, 85, 0.1)');  // Slate 700
 
   const gradientGruas = ctx.createLinearGradient(0, 0, 0, 400);
   gradientGruas.addColorStop(0, 'rgba(255, 199, 44, 0.6)');
   gradientGruas.addColorStop(1, 'rgba(255, 199, 44, 0.05)');
+  gradientGruas.addColorStop(0, 'rgba(249, 115, 22, 0.6)'); // Naranja corporativo
+  gradientGruas.addColorStop(1, 'rgba(249, 115, 22, 0.05)');
 
   // Inicialización de datos vacíos para mostrar grilla al inicio
   const initLabels = [];
@@ -182,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     datasets: [{
       label: 'Medidor CGE (I Max)', 
       data: initData1,
-      borderColor: '#0a72c1',
+      borderColor: 'var(--color-primary-light)', // Slate 600
       backgroundColor: gradientCGE,
       fill: true,
       tension: 0.3,
@@ -194,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
       label: 'I_MAX_GRUAS', 
       data: initData2,
       borderColor: '#ffc72c',
+      borderColor: '#f97316', // Naranja corporativo
       backgroundColor: gradientGruas,
       fill: true,
       tension: 0.3,
@@ -210,31 +261,31 @@ document.addEventListener('DOMContentLoaded', () => {
     data,
     options: {
       maintainAspectRatio: false,
-      animation: false,
+      animation: { duration: 0 }, // Desactivar animación para rendimiento
       responsive: true,
       plugins: {
         legend: {
-          labels: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 16, weight: 'bold' } }
+          labels: { color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(), font: { size: 16, weight: 'bold' } }
         },
         tooltip: {
           mode: 'index',
           intersect: false,
-          backgroundColor: '#0a72c1',
+          backgroundColor: 'var(--color-primary)',
           titleFont: { size: 16, weight: 'bold' },
           bodyFont: { size: 14 }
         },
       },
       scales: {
         x: {
-          title: { display: true, text: 'Tiempo', color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 18, weight: 'bold' } },
-          ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', maxRotation: 45, minRotation: 30 },
-          grid: { color: 'rgba(10, 61, 102, 0.08)', borderDash: [5, 5] }
+          title: { display: true, text: 'Tiempo', color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(), font: { size: 18, weight: 'bold' } },
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(), maxRotation: 45, minRotation: 30 },
+          grid: { color: 'rgba(0, 0, 0, 0.08)', borderDash: [5, 5] }
         },
         y: {
           beginAtZero: true,
-          title: { display: true, text: 'I Max', color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 18, weight: 'bold' } },
-          ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66' },
-          grid: { color: 'rgba(10, 61, 102, 0.08)', borderDash: [5, 5] }
+          title: { display: true, text: 'I Max', color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(), font: { size: 18, weight: 'bold' } },
+          ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim() },
+          grid: { color: 'rgba(0, 0, 0, 0.08)', borderDash: [5, 5] }
         }
       },
       interaction: {
@@ -290,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       plugins: {
         legend: {
-          labels: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66', font: { size: 14, weight: 'bold' } }
+          labels: { color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(), font: { size: 14, weight: 'bold' } }
         },
         tooltip: {
           mode: 'index',
@@ -301,15 +352,15 @@ document.addEventListener('DOMContentLoaded', () => {
         x: { 
           display: true,
           ticks: { 
-            color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66',
+            color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim(),
             maxRotation: 45,
             minRotation: 0,
             autoSkip: true,
             maxTicksLimit: 8
           },
-          grid: { display: false }
+          grid: { color: 'rgba(0, 0, 0, 0.08)' }
         },
-        y: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-primary').trim() || '#0a3d66' } }
+        y: { ticks: { color: getComputedStyle(document.body).getPropertyValue('--color-text-light').trim() }, grid: { color: 'rgba(0, 0, 0, 0.08)' } }
       }
     }
   });
@@ -358,18 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     pageData.forEach(item => {
       const row = peakHistoryTableBody.insertRow();
-      const cellDate = row.insertCell(0);
-      const cellValue = row.insertCell(1);
-      cellDate.textContent = item.date;
-      cellValue.textContent = item.value.toFixed(2);
+      // Separar la fecha y la hora para mostrarlas en columnas distintas.
+      const [datePart, timePartWithZ] = (item.fechaRegistroStr || 'T').split('T');
+      const timePart = (timePartWithZ || '').substring(0, 8); // Extraer solo HH:mm:ss
+
+      // Columnas: ID, Fecha, Hora, Valor
+      row.innerHTML = `<td>${item.ID || '--'}</td><td>${datePart}</td><td>${timePart}</td><td><strong>${item.value.toFixed(2)}</strong></td>`;
     });
 
     const totalPages = Math.ceil(peakHistoryData.length / rowsPerPage) || 1;
     if(pageInfo) pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
     if(btnPrev) btnPrev.disabled = currentPage === 1;
     if(btnNext) btnNext.disabled = currentPage === totalPages;
-
-    updatePeakChart(pageData);
   }
 
   function updateLastPeakWidget() {
@@ -378,10 +429,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (peakHistoryData.length > 0) {
       const latest = peakHistoryData[0];
+      const [datePart, timePartWithZ] = (latest.fechaRegistroStr || 'T').split('T');
+      const timePart = (timePartWithZ || '').substring(0, 8);
+      const displayDate = `${datePart} ${timePart}`;
+
       const valEl = document.getElementById('lastPeakValue');
       const dateEl = document.getElementById('lastPeakDate');
       if(valEl) valEl.innerHTML = `${latest.value.toFixed(2)} <span class="sts-unit">Amp</span>`;
-      if(dateEl) dateEl.textContent = latest.date;
+      if(dateEl) dateEl.textContent = displayDate;
     }
     if(loader) loader.style.display = 'none';
     if(content) content.style.display = 'block';
@@ -389,29 +444,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updatePeakChart(dataToRender) {
     const reversedData = [...(dataToRender || [])].reverse();
-    peakChart.data.labels = reversedData.map(d => d.date);
+    peakChart.data.labels = reversedData.map(item => {
+      return (item.fechaRegistroStr || '')
+        .replace('T', '_')
+        .substring(0, 19);
+    });
     peakChart.data.datasets[0].data = reversedData.map(d => d.value);
     peakChart.update();
   }
 
-  function updateHistoryDateRange() {
-    const dateRangeEl = document.getElementById('historyDateRange');
-    if (peakHistoryData.length > 1) {
-      const newestDate = peakHistoryData[0].date;
-      const oldestDate = peakHistoryData[peakHistoryData.length - 1].date;
-      
-      const fDate = document.getElementById('firstDate');
-      const lDate = document.getElementById('lastDate');
-      if(fDate) fDate.textContent = oldestDate;
-      if(lDate) lDate.textContent = newestDate;
-      if(dateRangeEl) dateRangeEl.style.display = 'block';
-    } else {
-      if(dateRangeEl) dateRangeEl.style.display = 'none';
-    }
-  }
-
   function addPeakToHistory(value, datetime) {
-    const newItem = { date: datetime, value: value };
+    const newItem = { 
+      ID: 'RT', // Real-Time
+      value: value, 
+      fechaRegistroStr: new Date().toISOString(),
+      timestamp: Date.now()
+    };
     peakHistoryData.unshift(newItem);
     
     const maxRecords = rowsPerPage * maxPages;
@@ -426,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateLastPeakWidget();
-    updateHistoryDateRange();
   }
 
   function showVisualAlert(value) {
@@ -444,9 +491,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Lógica del Historial KWH (Modal) ---
   let currentStsHistoryId = null;
   let kwhChartInstance = null;
-  let kwhData = [];
+  let kwhData = []; // Datos completos sin filtrar
+  let kwhFilteredData = []; // Datos filtrados por la búsqueda
   let currentKwhPage = 1;
-  let kwhRowsPerPage = 3;
+  const kwhRowsPerPage = 10;
 
   const btnKwhPrev = document.getElementById('btnKwhPrev');
   const btnKwhNext = document.getElementById('btnKwhNext');
@@ -461,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if(btnKwhNext) {
     btnKwhNext.addEventListener('click', () => {
-      const totalPages = Math.ceil(kwhData.length / kwhRowsPerPage) || 1;
+      const totalPages = Math.ceil(kwhFilteredData.length / kwhRowsPerPage) || 1;
       if (currentKwhPage < totalPages) {
         currentKwhPage++;
         renderKwhTable();
@@ -475,94 +523,312 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.innerHTML = '';
     const start = (currentKwhPage - 1) * kwhRowsPerPage;
     const end = start + kwhRowsPerPage;
-    const pageData = kwhData.slice(start, end);
+    const pageData = kwhFilteredData.slice(start, end);
 
     pageData.forEach(item => {
       const row = tbody.insertRow();
-      const lecturaHtml = item.hora ? `<span style="font-size:0.85em; color:#666; display:block;">Lectura: ${item.hora}</span>` : '<span style="font-size:0.85em; color:#aaa; display:block; font-style:italic;">Sin datos</span>';
-      row.innerHTML = `<td>${item.fechaTurno} ${lecturaHtml}</td><td>${item.turno || '-'}</td><td><strong>${item.energiaStr} ${item.isPlaceholder ? '' : 'kWh'}</strong></td>`;
+      // Separar la fecha y la hora para mostrarlas en columnas distintas.
+      const [datePart, timePartWithZ] = (item.fechaRegistroStr || 'T').split('T');
+      const timePart = (timePartWithZ || '').substring(0, 8); // Extraer solo HH:mm:ss
+
+      row.innerHTML = `<td>${item.ID || '--'}</td><td>${datePart}</td><td>${timePart}</td><td><strong>${item.energiaStr} kWh</strong></td>`;
     });
     
-    updateKwhChart(pageData);
-    
-    const dailyTotal = pageData.reduce((sum, item) => sum + (item.consumo || 0), 0);
-    const totalLabel = document.getElementById('dailyTotalLabel');
-    const totalValue = document.getElementById('dailyTotalValue');
-    const totalDisplay = document.getElementById('dailyTotalDisplay');
-    
-    if(totalLabel) totalLabel.textContent = `Consumo Total Día (${pageData[0]?.fechaTurno || '--'})`;
-    if(totalValue) totalValue.textContent = `${dailyTotal.toFixed(2)} kWh`;
-    if(totalDisplay) totalDisplay.style.display = 'block';
-
-    const totalPages = Math.ceil(kwhData.length / kwhRowsPerPage) || 1;
+    const totalPages = Math.ceil(kwhFilteredData.length / kwhRowsPerPage) || 1;
     const pageKwhInfo = document.getElementById('pageKwhInfo');
     if(pageKwhInfo) pageKwhInfo.textContent = `Página ${currentKwhPage} de ${totalPages}`;
     if(btnKwhPrev) btnKwhPrev.disabled = currentKwhPage === 1;
     if(btnKwhNext) btnKwhNext.disabled = currentKwhPage >= totalPages;
   }
 
+  window.filterKwhTable = () => {
+    const timeInput = document.getElementById('kwhTimeInput');
+    const filterTime = timeInput.value; // Formato "HH:mm"
+
+    if (!filterTime) {
+      kwhFilteredData = kwhData;
+    } else {
+      const [filterH, filterM] = filterTime.split(':').map(Number);
+      kwhFilteredData = kwhData.filter(item => {
+        // Extraer la parte de la hora (HH:mm:ss) del string original para comparar
+        const timePartWithZ = (item.fechaRegistroStr || '').split('T')[1] || '';
+        return timePartWithZ.startsWith(`${String(filterH).padStart(2, '0')}:${String(filterM).padStart(2, '0')}`);
+      });
+    }
+    
+    currentKwhPage = 1;
+    renderKwhTable();
+  }
+
+  window.clearKwhFilter = () => {
+    const timeInput = document.getElementById('kwhTimeInput');
+    if (timeInput) timeInput.value = '';
+    kwhFilteredData = kwhData;
+    currentKwhPage = 1;
+    renderKwhTable();
+  }
+
   function updateKwhChart(items) {
     if (kwhChartInstance) kwhChartInstance.destroy();
     
-    const chartData = [...items].sort((a, b) => a.shiftSortKey - b.shiftSortKey);
-    
-    const labels = chartData.map(i => i.turno || i.fecha);
-    const data = chartData.map(i => i.consumo || 0);
-    
-    const borderColors = chartData.map(i => {
-      const t = (i.turno || '').toLowerCase();
-      if(t.includes('turno 1') || t.includes('turno_1')) return '#ffc72c';
-      if(t.includes('turno 2') || t.includes('turno_2')) return '#0a72c1';
-      if(t.includes('turno 3') || t.includes('turno_3')) return '#28a745';
-      return '#666';
+    // Filtrar datos para mostrar solo los cambios de valor.
+    // 1. Ordenar cronológicamente (ascendente) para un filtrado correcto.
+    const sortedForFiltering = [...items].sort((a, b) => a.timestamp - b.timestamp);
+    const uniqueData = [];
+    let lastValue = null;
+
+    sortedForFiltering.forEach(item => {
+      if (item.energiaVal !== lastValue) {
+        uniqueData.push(item);
+        lastValue = item.energiaVal;
+      }
     });
+
+    // Usar los datos filtrados para el gráfico
+    const chartData = uniqueData;
+    
+    const labels = chartData.map(item => {
+      return (item.fechaRegistroStr || '')
+        .replace('T', '_')
+        .substring(0, 19);
+    });
+    const data = chartData.map(i => i.energiaVal);
+    const average = data.length > 0 ? data.reduce((a, b) => a + b, 0) / data.length : 0;
+    const averageData = new Array(labels.length).fill(average);
 
     const ctxModal = document.getElementById('kwhShiftChart').getContext('2d');
     
-    const gradT1 = ctxModal.createLinearGradient(0, 0, 0, 400);
-    gradT1.addColorStop(0, 'rgba(255, 199, 44, 0.8)');
-    gradT1.addColorStop(1, 'rgba(255, 199, 44, 0.1)');
-
-    const gradT2 = ctxModal.createLinearGradient(0, 0, 0, 400);
-    gradT2.addColorStop(0, 'rgba(10, 114, 193, 0.8)');
-    gradT2.addColorStop(1, 'rgba(10, 114, 193, 0.1)');
-
-    const gradT3 = ctxModal.createLinearGradient(0, 0, 0, 400);
-    gradT3.addColorStop(0, 'rgba(40, 167, 69, 0.8)');
-    gradT3.addColorStop(1, 'rgba(40, 167, 69, 0.1)');
-
-    const gradDef = ctxModal.createLinearGradient(0, 0, 0, 400);
-    gradDef.addColorStop(0, 'rgba(100, 100, 100, 0.8)');
-    gradDef.addColorStop(1, 'rgba(100, 100, 100, 0.1)');
+    const gradient = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(10, 114, 193, 0.6)');
+    gradient.addColorStop(1, 'rgba(10, 114, 193, 0.05)');
 
     kwhChartInstance = new Chart(ctxModal, {
-      type: 'bar',
+      type: 'line',
       data: {
         labels: labels,
         datasets: [{
-          label: 'Consumo del Turno (kWh)',
+          label: 'Energía (kWh)',
           data: data,
-          backgroundColor: chartData.map(i => {
-            const t = (i.turno || '').toLowerCase();
-            if(t.includes('turno 1') || t.includes('turno_1')) return gradT1;
-            if(t.includes('turno 2') || t.includes('turno_2')) return gradT2;
-            if(t.includes('turno 3') || t.includes('turno_3')) return gradT3;
-            return gradDef;
-          }),
-          borderColor: borderColors,
-          borderWidth: 1
+          backgroundColor: gradient,
+          borderColor: '#0a72c1',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+          pointRadius: 2,
+          pointHoverRadius: 5
+        }, {
+          label: `Promedio (${average.toFixed(2)} kWh)`,
+          data: averageData,
+          borderColor: '#dc3545',
+          borderWidth: 2,
+          fill: false,
+          pointRadius: 0,
+          borderDash: [5, 5], // Línea discontinua
+          tension: 0,
+          pointHoverRadius: 0
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          title: { display: true, text: 'Consumo por Turno (Visualizado)' }
+        interaction: {
+          mode: 'index',
+          intersect: false
         },
-        scales: { y: { beginAtZero: true, title: { display: true, text: 'kWh' } } }
+        plugins: {
+          legend: { display: true },
+          title: { display: true, text: 'Historial de Consumo de Energía (kWh)' }
+        },
+        scales: { 
+          y: { beginAtZero: false, title: { display: true, text: 'kWh' } },
+          x: {
+            ticks: {
+              maxRotation: 45,
+              minRotation: 30,
+              autoSkip: true,
+              maxTicksLimit: 15
+            }
+          }
+        }
       }
     });
+
+    // 2. Invertir el array para mostrar el más reciente primero en la tabla.
+    kwhData = [...uniqueData].reverse();
+    kwhFilteredData = kwhData; // Inicialmente, los datos filtrados son todos los datos
+    currentKwhPage = 1;
+    const timeInput = document.getElementById('kwhTimeInput');
+    if (timeInput) timeInput.value = ''; // Limpiar búsqueda
+    renderKwhTable();
+  }
+
+  window.clearWindFilter = () => {
+    const timeInput = document.getElementById('windTimeInput');
+    if (timeInput) timeInput.value = '';
+    windFilteredData = windData;
+    currentWindPage = 1;
+    renderWindTable();
+  }
+
+  window.filterWindTable = () => {
+    const timeInput = document.getElementById('windTimeInput');
+    const filterTime = timeInput.value; // Formato "HH:mm"
+
+    if (!filterTime) {
+      windFilteredData = windData;
+    } else {
+      const [filterH, filterM] = filterTime.split(':').map(Number);
+      windFilteredData = windData.filter(item => {
+        // Extraer la parte de la hora (HH:mm:ss) del string original para comparar
+        const timePartWithZ = (item.fechaRegistroStr || '').split('T')[1] || '';
+        const timePart = timePartWithZ.substring(0, 8); // HH:mm:ss
+        return timePart.startsWith(`${String(filterH).padStart(2, '0')}:${String(filterM).padStart(2, '0')}`);
+      });
+    }
+    currentWindPage = 1;
+    renderWindTable();
+  }
+  // --- Lógica del Historial de Viento (Modal) ---
+  let windChartInstance = null;
+  let windData = [];
+  let windFilteredData = [];
+  let currentWindPage = 1;
+  const windRowsPerPage = 10;
+
+  const btnWindPrev = document.getElementById('btnWindPrev');
+  const btnWindNext = document.getElementById('btnWindNext');
+
+  if(btnWindPrev) {
+    btnWindPrev.addEventListener('click', () => {
+      if (currentWindPage > 1) {
+        currentWindPage--;
+        renderWindTable();
+      }
+    });
+  }
+  if(btnWindNext) {
+    btnWindNext.addEventListener('click', () => {
+      const totalPages = Math.ceil(windFilteredData.length / windRowsPerPage) || 1;
+      if (currentWindPage < totalPages) {
+        currentWindPage++;
+        renderWindTable();
+      }
+    });
+  }
+
+  function renderWindTable() {
+    const tbody = document.querySelector('#windHistoryTable tbody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    const start = (currentWindPage - 1) * windRowsPerPage;
+    const end = start + windRowsPerPage;
+    const pageData = windFilteredData.slice(start, end);
+
+    pageData.forEach(item => {
+      const row = tbody.insertRow();
+      // Separar la fecha y la hora para mostrarlas en columnas distintas.
+      const [datePart, timePartWithZ] = item.fechaRegistroStr.split('T');
+      const timePart = timePartWithZ.substring(0, 8); // Extraer solo HH:mm:ss
+
+      row.innerHTML = `<td>${item.ID || '--'}</td><td>${datePart}</td><td>${timePart}</td><td><strong>${item.value.toFixed(2)} m/s</strong></td>`;
+    });
+
+    const totalPages = Math.ceil(windFilteredData.length / windRowsPerPage) || 1;
+    const pageWindInfo = document.getElementById('pageWindInfo');
+    if(pageWindInfo) pageWindInfo.textContent = `Página ${currentWindPage} de ${totalPages}`;
+    if(btnWindPrev) btnWindPrev.disabled = currentWindPage === 1;
+    if(btnWindNext) btnWindNext.disabled = currentWindPage >= totalPages;
+  }
+
+  function updateWindChartAndTable(items) {
+    if (windChartInstance) windChartInstance.destroy();
+    
+    // --- OPTIMIZACIÓN: Muestreo de datos cada 3 minutos para la tabla Y EL GRÁFICO ---
+    const sortedItems = [...items].sort((a, b) => a.timestamp - b.timestamp); // 1. Ordenar cronológicamente
+    const sampledData = [];
+    let lastKeptTimestamp = -Infinity;
+    const threeMinutesInMillis = 3 * 60 * 1000;
+
+    sortedItems.forEach(item => {
+        if (item.timestamp >= lastKeptTimestamp + threeMinutesInMillis) {
+            sampledData.push(item);
+            lastKeptTimestamp = item.timestamp;
+        }
+    });
+    if (sampledData.length === 0 && sortedItems.length > 0) {
+        sampledData.push(sortedItems[sortedItems.length - 1]);
+    }
+
+    // Usar los datos muestreados para el gráfico
+    const chartData = sampledData;
+    
+    const labels = chartData.map(item => {
+      return (item.fechaRegistroStr || '')
+        .replace('T', '_')
+        .substring(0, 19);
+    });
+    const data = chartData.map(i => i.value);
+
+    // Encontrar el valor máximo para resaltarlo en el gráfico
+    const maxValue = data.length > 0 ? Math.max(...data) : 0;
+    const peakData = data.map(d => (d === maxValue ? d : null));
+    // Para asegurar que solo se muestre un punto si hay varios máximos iguales
+    const firstMaxIndex = peakData.indexOf(maxValue);
+    const singlePeakData = peakData.map((d, i) => (i === firstMaxIndex ? d : null));
+
+    const ctxModal = document.getElementById('windChart').getContext('2d');
+    
+    const gradient = ctxModal.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, 'rgba(40, 167, 69, 0.6)');
+    gradient.addColorStop(1, 'rgba(40, 167, 69, 0.05)');
+
+    windChartInstance = new Chart(ctxModal, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Velocidad del Viento (m/s)',
+          data: data,
+          backgroundColor: gradient,
+          borderColor: '#28a745',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.1,
+          pointRadius: 2,
+          pointHoverRadius: 5
+        }, {
+          label: `Peak (${maxValue.toFixed(2)} m/s)`,
+          data: singlePeakData,
+          type: 'scatter',
+          backgroundColor: '#dc3545',
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          borderColor: 'rgba(255,255,255,0.8)',
+          borderWidth: 2,
+          showLine: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true },
+          title: { display: true, text: 'Historial de Velocidad del Viento' }
+        },
+        scales: { 
+          y: { beginAtZero: true, title: { display: true, text: 'm/s' } },
+          x: { ticks: { maxRotation: 45, minRotation: 30, autoSkip: true, maxTicksLimit: 15 } }
+        }
+      }
+    });
+
+    windData = [...sampledData].reverse(); // Invertir para mostrar el más reciente primero en la tabla
+    windFilteredData = windData;
+    currentWindPage = 1;
+    const timeInput = document.getElementById('windTimeInput');
+    if (timeInput) timeInput.value = '';
+    renderWindTable();
   }
 
   // --- Funciones Globales (accesibles desde HTML) ---
@@ -1145,6 +1411,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('kwhModal');
     const title = document.getElementById('modalTitle');
     
+    // Limpiar gráfico anterior para evitar datos mezclados
+    if (kwhChartInstance) {
+      kwhChartInstance.destroy();
+      kwhChartInstance = null;
+    }
+
     if(modal) modal.style.display = "block";
     title.innerHTML = `<span>📊</span> Historial KWH - STS ${stsId}`;
     
@@ -1153,9 +1425,8 @@ document.addEventListener('DOMContentLoaded', () => {
     input.value = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
     
     kwhData = [];
-    currentKwhPage = 1;
-    renderKwhTable();
-
+    renderKwhTable(); // Limpiar tabla
+    
     const responseTopic = `respuesta_hist_kwh_STS${stsId}`;
     
     client.subscribe(responseTopic, (err) => {
@@ -1203,6 +1474,58 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 8000);
   }
 
+  window.openWindHistory = () => {
+    const modal = document.getElementById('windModal');
+    if(modal) modal.style.display = "block";
+    
+    const input = document.getElementById('windDateInput');
+    const now = new Date();
+    input.value = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+    
+    windData = [];
+    renderWindTable();
+    
+    const responseTopic = `respuesta_hist_viento`;
+    client.subscribe(responseTopic, (err) => {
+      if(!err) console.log(`✅ Suscrito a ${responseTopic} para historial de viento.`);
+    });
+    
+    window.requestWindHistoryData();
+  }
+
+  window.closeWindHistory = () => {
+    const modal = document.getElementById('windModal');
+    if(modal) modal.style.display = "none";
+    
+    client.unsubscribe(`respuesta_hist_viento`);
+    
+    if (windChartInstance) {
+      windChartInstance.destroy();
+      windChartInstance = null;
+    }
+  }
+
+  window.requestWindHistoryData = () => {
+    const dateVal = document.getElementById('windDateInput').value;
+    if(!dateVal) { showToast("Seleccione una fecha", "error"); return; }
+
+    const loader = document.getElementById('windModalLoader');
+    const status = document.getElementById('windModalStatus');
+
+    if(loader) loader.style.display = 'block';
+    if(status) status.style.display = 'none';
+    
+    windData = [];
+    renderWindTable();
+
+    const topic = `consulta_hist_viento`;
+    client.publish(topic, dateVal);
+    
+    setTimeout(() => {
+        if(loader && loader.style.display === 'block') loader.style.display = 'none';
+    }, 8000);
+  }
+
   // Cerrar modal si se hace clic fuera
   window.onclick = function(event) {
     const modal = document.getElementById('kwhModal');
@@ -1219,10 +1542,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const rModal = document.getElementById('regenModal');
     if (event.target == rModal) closeConsumptionModal();
+
+    const wModal = document.getElementById('windModal');
+    if (event.target == wModal) closeWindHistory();
     
     if (event.target == document.getElementById('slowDownModal')) closeSlowDownModal();
   }
 
+  window.requestPeakHistoryData = () => {
+    const dateInput = document.getElementById('peakDateInput');
+    if (!dateInput) return;
+    const dateVal = dateInput.value;
+    if (!dateVal) {
+      showToast("Por favor, seleccione una fecha.", "error");
+      return;
+    }
+
+    const histInd = document.getElementById('historyIndicator');
+    if(histInd) {
+      histInd.textContent = "🗂️ Historial: Solicitando...";
+      histInd.style.color = "#fd7e14";
+    }
+    const mainLoader = document.getElementById('mainTableLoader');
+    if(mainLoader) mainLoader.style.display = 'block';
+    
+    // Limpiar datos anteriores
+    peakHistoryData = [];
+    renderTable();
+
+    client.publish('CONSULTA_PEAKS', dateVal);
+  };
    // Suscripción al topic
   client.on('connect', () => {
     console.log('Conectado al broker MQTT');
@@ -1267,6 +1616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     client.subscribe('CORRIENTE_N');
     client.subscribe('CORRIENTE_TIERRA');
     client.subscribe('RESPUESTA_CONSUMO');
+    client.subscribe('respuesta_hist_viento');
     client.subscribe(['valor_actual_kwh_sts1', 'valor_actual_kwh_sts2', 'valor_actual_kwh_sts3', 'valor_actual_kwh_sts4', 'valor_actual_kwh_sts5'], (err) => {
       if (!err) {
         const requestKwhNow = () => {
@@ -1280,16 +1630,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setInterval(requestKwhNow, 5000);
 
         setTimeout(() => {
-          client.subscribe('HISTORIAL_PEAKS'); 
-          client.publish('CONSULTA_PEAKS', 'req');
-          const histInd = document.getElementById('historyIndicator');
-          if(histInd) {
-            histInd.textContent = "🗂️ Historial: Solicitando...";
-            histInd.style.color = "#fd7e14";
+          client.subscribe('HISTORIAL_PEAKS');
+          // Establecer la fecha de hoy y solicitar los datos iniciales
+          const dateInput = document.getElementById('peakDateInput');
+          if (dateInput) {
+            const now = new Date();
+            dateInput.value = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+            requestPeakHistoryData();
           }
-          const mainLoader = document.getElementById('mainTableLoader');
-          if(mainLoader) mainLoader.style.display = 'block';
-          client.publish('CONSULTA_SLOWSTS', 'req');
         }, 2500);
       }
     });
@@ -1333,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const content1 = document.getElementById('topic1Content');
 
         if(topic1El) topic1El.innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
-        if(loader1) loader1.style.display = 'none';
+        if(loader1 && loader1.style) loader1.style.display = 'none';
         if(content1) content1.style.display = 'block';
 
         cgeCurrentAmp = value;
@@ -1345,7 +1693,10 @@ document.addEventListener('DOMContentLoaded', () => {
             alertActive = true;
             showVisualAlert(value); 
             addPeakToHistory(value, fullDate);
-            const payload = JSON.stringify({ date: fullDate, value: value });
+            const payload = JSON.stringify({ 
+              Valor: value, 
+              FechaRegistro: new Date().toISOString() 
+            });
             client.publish('REGISTRO_PEAK', payload);
           }
         } else {
@@ -1376,7 +1727,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const content2 = document.getElementById('topic2Content');
 
         if(topic2El) topic2El.innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
-        if(loader2) loader2.style.display = 'none';
+        if(loader2 && loader2.style) loader2.style.display = 'none';
         if(content2) content2.style.display = 'block';
 
         const lastDataIndex = data.datasets[1].data.length - 1;
@@ -1389,7 +1740,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    const stsMatch = topic.match(/^(I_STS|SLOWSTS|valor_actual_kwh_sts)(\d+)$/);
+    const stsMatch = topic.match(/^(I_STS|SLOWSTS|valor_actual_kwh_sts)(\d*)$/);
     if (stsMatch) {
       const type = stsMatch[1];
       const id = parseInt(stsMatch[2], 10);
@@ -1398,13 +1749,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (type === 'I_STS') {
         const value = parseFloat(valueStr);
         if (!isNaN(value)) {
-          const topicNum = id + 2;
+          const topicNum = !isNaN(id) ? id + 2 : 3; // Si no hay ID (ej. I_STS), asume STS1 (topic3)
           const el = document.getElementById(`topic${topicNum}`);
           if(el) el.innerHTML = `${value.toFixed(2)} <span class="sts-unit">Amp</span>`;
-          
+
           const loader = document.getElementById(`topic${topicNum}Loader`);
-          if(loader) loader.style.display = 'none';
-          
+          if(loader && loader.style) loader.style.display = 'none';
+
           const content = document.getElementById(`topic${topicNum}Content`);
           if(content) content.style.display = 'block';
         }
@@ -1545,10 +1896,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (topic.startsWith('respuesta_hist_kwh_STS')) {
       const status = document.getElementById('modalStatus');
       const loader = document.getElementById('modalLoader');
-      const rawData = message.toString();
+      const rawData = message.toString().trim();
       
       const match = topic.match(/STS(\d+)/);
-
+      let parsedItems = [];
       if (match && match[1]) {
         const stsIdFromTopic = parseInt(match[1], 10);
         let csvContent = rawData;
@@ -1561,9 +1912,6 @@ document.addEventListener('DOMContentLoaded', () => {
                       status.innerHTML = '<div style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 8px; border: 1px solid #f5c6cb; margin-top: 20px;"><strong>❌ Sin Datos</strong><br>No se encontraron registros para la fecha seleccionada.</div>';
                       status.style.display = "block";
                     }
-                    
-                    document.querySelector('#kwhHistoryTable tbody').innerHTML = '';
-                    document.getElementById('dailyTotalDisplay').style.display = 'none';
                     
                     if (kwhChartInstance) { kwhChartInstance.destroy(); kwhChartInstance = null; }
                 }
@@ -1578,40 +1926,73 @@ document.addEventListener('DOMContentLoaded', () => {
                  titleEl.innerHTML = `<span>📊</span> Historial KWH - STS ${stsIdFromTopic} <div style="font-size:0.5em; font-weight:normal; color:#666; margin-top:5px;">📄 ${filename}</div>`;
             }
         } catch (e) {}
-
-        const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
-        const parsedItems = [];
         
-        lines.forEach(line => {
-          const parts = line.split(',');
-          if (parts.length >= 3) {
-            let ts = 0;
-            try {
-              const dStr = parts[0].trim();
-              const tStr = parts[1].trim();
-              const dParts = dStr.split(/[-/]/);
-              if (dParts.length === 3) {
-                let cleanTime = tStr.toLowerCase().replace(/\./g, '').replace(/\s/g, '');
-                let matchTime = cleanTime.match(/^(\d{1,2}):(\d{1,2}):?(\d{1,2})?/);
-                if (matchTime) {
-                  let h = parseInt(matchTime[1], 10);
-                  if (cleanTime.includes('pm') && h !== 12) h += 12;
-                  if (cleanTime.includes('am') && h === 12) h = 0;
-                  ts = new Date(dParts[2], dParts[1]-1, dParts[0], h, parseInt(matchTime[2]), matchTime[3]?parseInt(matchTime[3]):0).getTime();
-                }
-              }
-            } catch(e){}
-
-            parsedItems.push({
-              fecha: parts[0].trim(),
-              hora: parts[1].trim(),
-              energiaVal: parseFloat(parts[2].trim()),
-              energiaStr: parts[2].trim(),
-              turno: parts.length > 3 ? parts[3].trim() : '',
-              timestamp: ts
+        try {
+          // Análisis JSON robusto: intentar parsear, y si falla, buscar el último JSON válido.
+          let jsonArray = [];
+          try {
+            jsonArray = JSON.parse(csvContent);
+          } catch (jsonError) {
+            console.warn("Fallo el parseo JSON inicial, intentando recuperar...", jsonError);
+            const lastValidJsonEnd = csvContent.lastIndexOf('}]');
+            if (lastValidJsonEnd > 0) {
+              jsonArray = JSON.parse(csvContent.substring(0, lastValidJsonEnd + 2));
+            }
+          }
+          if (Array.isArray(jsonArray)) {
+            jsonArray.forEach(item => {
+              const fechaRegistro = new Date(item.FechaRegistro);
+              parsedItems.push({
+                ID: item.ID,
+                fecha: fechaRegistro.toLocaleDateString('es-CL'),
+                hora: fechaRegistro.toLocaleTimeString('es-CL'),
+                fechaRegistroStr: item.FechaRegistro, // Guardar la cadena original
+                energiaVal: parseFloat(item.Valor),
+                energiaStr: String(item.Valor),
+                turno: '', // El nuevo formato no parece tener turno
+                timestamp: fechaRegistro.getTime()
+              });
             });
           }
-        });
+        } catch (e) {
+          // Si falla, volver al parseo de CSV
+          const lines = csvContent.split(/\r?\n/).filter(line => line.trim() !== '');
+          lines.forEach(line => {
+            const parts = line.split(',');
+            if (parts.length >= 3) {
+              let ts = 0;
+              try {
+                const dStr = parts[0].trim();
+                const tStr = parts[1].trim();
+                const dParts = dStr.split(/[-/]/);
+                if (dParts.length === 3) {
+                  let cleanTime = tStr.toLowerCase().replace(/\./g, '');
+                  const isAm = cleanTime.includes('am');
+                  const isPm = cleanTime.includes('pm');
+                  cleanTime = cleanTime.replace(/\s*(am|pm)\s*/, '').trim();
+                  let matchTime = cleanTime.match(/^(\d{1,2}):(\d{2}):?(\d{2})?/);
+                  if (matchTime) {
+                    let h = parseInt(matchTime[1], 10);
+                    const m = parseInt(matchTime[2], 10);
+                    const s = matchTime[3] ? parseInt(matchTime[3], 10) : 0;
+                    if (isPm && h < 12) h += 12;
+                    else if (isAm && h === 12) h = 0;
+                    else if (!isAm && !isPm && h === 12) h = 0;
+                    ts = new Date(dParts[2], dParts[1]-1, dParts[0], h, m, s).getTime();
+                  }
+                }
+              } catch(err){}
+              parsedItems.push({
+                fecha: parts[0].trim(),
+                hora: parts[1].trim(),
+                energiaVal: parseFloat(parts[2].trim()),
+                energiaStr: parts[2].trim(),
+                turno: parts.length > 3 ? parts[3].trim() : '',
+                timestamp: ts
+              });
+            }
+          });
+        }
 
         if (currentStsHistoryId === stsIdFromTopic) {
           try {
@@ -1619,114 +2000,9 @@ document.addEventListener('DOMContentLoaded', () => {
               if(loader) loader.style.display = "none";
               if(status) status.style.display = "none"; 
               
-              const minByShift = {};
-              parsedItems.forEach(item => {
-                if (isNaN(item.energiaVal)) return;
-                
-                let d;
-                const dateParts = item.fecha.split(/[-/]/);
-                if (dateParts.length === 3) {
-                  d = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
-                } else {
-                  return;
-                }
+              updateKwhChart(parsedItems);
 
-                if (item.turno && (item.turno.toLowerCase().includes("turno 3") || item.turno.toLowerCase().includes("turno_3"))) {
-                  const cleanTime = item.hora.toLowerCase().replace(/\./g, '').replace(/\s/g, '');
-                  const match = cleanTime.match(/^(\d{1,2}):/);
-                  let hour = match ? parseInt(match[1], 10) : -1;
-
-                  if (cleanTime.includes('pm') && hour !== 12) hour += 12;
-                  else if (cleanTime.includes('am') && hour === 12) hour = 0;
-
-                  if (hour >= 0 && hour < 8) {
-                    d.setDate(d.getDate() - 1);
-                  }
-                }
-
-                const shiftDay = String(d.getDate()).padStart(2, '0');
-                const shiftMonth = String(d.getMonth() + 1).padStart(2, '0');
-                const shiftYear = d.getFullYear();
-                item.fechaTurno = `${shiftDay}-${shiftMonth}-${shiftYear}`;
-
-                let shiftOrder = 0;
-                const tLower = item.turno ? item.turno.toLowerCase() : '';
-                if (tLower.includes('turno 1') || tLower.includes('turno_1')) shiftOrder = 1;
-                else if (tLower.includes('turno 2') || tLower.includes('turno_2')) shiftOrder = 2;
-                else if (tLower.includes('turno 3') || tLower.includes('turno_3')) shiftOrder = 3;
-                
-                item.shiftSortKey = d.getTime() + (shiftOrder * 3600000);
-
-                const turnoKey = item.turno ? item.turno.toLowerCase().replace(/\s/g, '') : 'sin_turno';
-                const key = `${item.fechaTurno}_${turnoKey}`;
-                
-                if (!minByShift[key] || item.energiaVal < minByShift[key].energiaVal) {
-                  minByShift[key] = item;
-                }
-              });
-
-              const winners = new Set(Object.values(minByShift));
-              const itemsToShow = parsedItems.filter(item => winners.has(item));
-              
-              itemsToShow.sort((a, b) => b.shiftSortKey - a.shiftSortKey);
-
-              const sortedAsc = [...itemsToShow].sort((a, b) => a.shiftSortKey - b.shiftSortKey);
-              for (let i = 0; i < sortedAsc.length - 1; i++) {
-                const diff = sortedAsc[i+1].energiaVal - sortedAsc[i].energiaVal;
-                sortedAsc[i].consumo = diff >= 0 ? diff : 0;
-              }
-              if(sortedAsc.length > 0) sortedAsc[sortedAsc.length-1].consumo = 0;
-
-              const byDate = {};
-              itemsToShow.forEach(item => {
-                if (!byDate[item.fechaTurno]) byDate[item.fechaTurno] = [];
-                byDate[item.fechaTurno].push(item);
-              });
-
-              const finalDisplayList = [];
-              const uniqueDates = Object.keys(byDate).sort((a, b) => {
-                 const pa = a.split('-'); const pb = b.split('-');
-                 return new Date(pb[2], pb[1]-1, pb[0]) - new Date(pa[2], pa[1]-1, pa[0]);
-              });
-
-              if (uniqueDates.length > 0) {
-                 const dateStr = uniqueDates[0];
-                 const dayItems = byDate[dateStr];
-                 
-                 const t1 = dayItems.find(i => i.turno.toLowerCase().includes('turno 1') || i.turno.toLowerCase().includes('turno_1'));
-                 const t2 = dayItems.find(i => i.turno.toLowerCase().includes('turno 2') || i.turno.toLowerCase().includes('turno_2'));
-                 const t3 = dayItems.find(i => i.turno.toLowerCase().includes('turno 3') || i.turno.toLowerCase().includes('turno_3'));
-
-                 if (t1) t1.turno = 'Turno 1 (08:00-15:30)';
-                 if (t2) t2.turno = 'Turno 2 (15:30-23:00)';
-                 if (t3) t3.turno = 'Turno 3 (23:00-06:30)';
-
-                 const getPlaceholder = (name, order) => {
-                    const parts = dateStr.split('-');
-                    const d = new Date(parts[2], parts[1]-1, parts[0]);
-                    return {
-                      fecha: dateStr,
-                      hora: '',
-                      fechaTurno: dateStr,
-                      turno: name,
-                      energiaStr: '---',
-                      energiaVal: 0,
-                      consumo: 0,
-                      shiftSortKey: d.getTime() + (order * 3600000),
-                      isPlaceholder: true
-                    };
-                 };
-
-                 finalDisplayList.push(t3 || getPlaceholder('Turno 3 (23:00-06:30)', 3));
-                 finalDisplayList.push(t2 || getPlaceholder('Turno 2 (15:30-23:00)', 2));
-                 finalDisplayList.push(t1 || getPlaceholder('Turno 1 (08:00-15:30)', 1));
-              }
-
-              kwhData = finalDisplayList;
-              currentKwhPage = 1;
-              renderKwhTable();
-
-              if (itemsToShow.length === 0) {
+              if (parsedItems.length === 0) {
                 if(loader) loader.style.display = "none";
                 if(status) { status.textContent = "No se encontraron datos válidos."; status.style.display = "block"; }
               }
@@ -1746,6 +2022,55 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    if (topic === 'respuesta_hist_viento') {
+      const loader = document.getElementById('windModalLoader');
+      const status = document.getElementById('windModalStatus');
+      const rawData = message.toString().trim();
+      let parsedItems = [];
+
+      try {
+        let jsonArray = [];
+        try {
+          jsonArray = JSON.parse(rawData);
+        } catch (jsonError) {
+          const lastValidJsonEnd = rawData.lastIndexOf('}]');
+          if (lastValidJsonEnd > 0) {
+            jsonArray = JSON.parse(rawData.substring(0, lastValidJsonEnd + 2));
+          }
+        }
+
+        if (Array.isArray(jsonArray)) {
+          jsonArray.forEach(item => {
+            parsedItems.push({
+              ID: item.ID,
+              timestamp: new Date(item.FechaRegistro).getTime(),
+              fechaRegistroStr: item.FechaRegistro, // Guardar la cadena original
+              value: parseFloat(item.Valor)
+            });
+          });
+        }
+      } catch (e) {
+        console.error("Error procesando historial de viento:", e);
+      }
+
+      if (parsedItems.length > 0) {
+        if(loader) loader.style.display = "none";
+        if(status) status.style.display = "none"; 
+        updateWindChartAndTable(parsedItems);
+      } else {
+        if(loader) loader.style.display = "none";
+        if(status) {
+          status.innerHTML = '<div style="padding: 15px; background-color: #f8d7da; color: #721c24; border-radius: 8px; border: 1px solid #f5c6cb; margin-top: 20px;"><strong>❌ Sin Datos</strong><br>No se encontraron registros para la fecha seleccionada.</div>';
+          status.style.display = "block";
+        }
+        if (windChartInstance) {
+          windChartInstance.destroy();
+          windChartInstance = null;
+        }
+      }
+      return;
+    }
+
     if (topic === 'Viento_STS1') {
       const value = parseFloat(message.toString());
       if (!isNaN(value)) {
@@ -1757,25 +2082,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const topic8El = document.getElementById('topic8');
         const loader8 = document.getElementById('topic8Loader');
         const content8 = document.getElementById('topic8Content');
-
+        
         if(topic8El) topic8El.innerHTML = `${knots} <span class="sts-unit">Nudos</span> | ${kmh} <span class="sts-unit">km/h</span>`;
         if(loader8) loader8.style.display = 'none';
         if(content8) content8.style.display = 'block';
 
         const cell = document.getElementById('topic8-cell');
         if(!cell) return;
+        // Limpiar clases de estado anteriores
+        cell.classList.remove('status-critical', 'status-high', 'status-warning');
+
         if (value >= 25) {
-          cell.style.backgroundColor = '#dc3545';
-          cell.style.color = '#fff';
+          cell.classList.add('status-critical');
         } else if (value >= 20) {
-          cell.style.backgroundColor = '#fd7e14';
-          cell.style.color = '#fff';
+          cell.classList.add('status-high');
         } else if (value >= 18) {
-          cell.style.backgroundColor = '#ffc107';
-          cell.style.color = '#333';
-        } else {
-          cell.style.backgroundColor = '#28a745';
-          cell.style.color = '#fff';
+          cell.classList.add('status-warning');
         }
       }
     }
@@ -1785,15 +2107,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const historyData = JSON.parse(message.toString());
         
         if (Array.isArray(historyData)) {
-          let processedData = historyData;
-          
-          if (processedData.length > 0 && processedData[0].col1) {
-             processedData = processedData.map(d => ({
-                 date: `${d.col1} ${d.col2}`,
-                 value: parseFloat(d.col3)
-             }));
+          if (historyData.length === 0) {
+            const ind = document.getElementById('historyIndicator');
+            if(ind) { ind.textContent = `Total de eventos de peak: 0`; ind.style.color = "#ffc107"; }
+            const mainLoader = document.getElementById('mainTableLoader');
+            if(mainLoader) mainLoader.style.display = 'none';
+            return;
           }
-
+          // Procesar el nuevo formato JSON
+          const processedData = historyData.map(item => {
+            const fechaRegistro = new Date(item.FechaRegistro);
+            return {
+              ID: item.ID,
+              value: parseFloat(item.Valor),
+              fechaRegistroStr: item.FechaRegistro, // Guardar la cadena original
+              timestamp: fechaRegistro.getTime()
+            };
+          }).sort((a, b) => b.timestamp - a.timestamp); // Ordenar descendente
+          
           const maxRecords = rowsPerPage * maxPages;
           if (processedData.length > maxRecords) {
              processedData = processedData.slice(0, maxRecords);
@@ -1806,7 +2137,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTable(); 
             const ind = document.getElementById('historyIndicator');
             if(ind) {
-              ind.textContent = `🗂️ Historial: Cargado (${peakHistoryData.length} reg.)`;
+              ind.textContent = `Total de eventos de peak: ${peakHistoryData.length}`;
               ind.style.color = "#28a745"; 
             }
             const mainLoader = document.getElementById('mainTableLoader');
@@ -1814,47 +2145,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if(mainLoader) mainLoader.style.display = 'none';
             if(peakLoader) peakLoader.style.display = 'none';
             updateLastPeakWidget();
-            
-            setTimeout(() => {
-               if (currentPage === 1) {
-                   const pageData = peakHistoryData.slice(0, rowsPerPage);
-                   updatePeakChart(pageData);
-               }
-               updateHistoryDateRange();
-            }, 50);
+            updatePeakChart(peakHistoryData); // Graficar todos los datos del día
           });
         } 
-        else if (historyData.col1 && historyData.col2 && historyData.col3) {
-          const fullDate = `${historyData.col1} ${historyData.col2}`;
-          const value = parseFloat(historyData.col3);
-          
-          const isDuplicate = peakHistoryData.some(item => item.date === fullDate && Math.abs(item.value - value) < 0.01);
-          if (isDuplicate) {
-            const mainLoader = document.getElementById('mainTableLoader');
-            if(mainLoader) mainLoader.style.display = 'none';
-            return;
-          }
-
-          peakHistoryData.unshift({ date: fullDate, value: value });
-          
-          const ind = document.getElementById('historyIndicator');
-          if(ind) {
-             ind.textContent = `🗂️ Historial: Recibiendo (${peakHistoryData.length})`;
-             ind.style.color = "#fd7e14";
-          }
-
-          clearTimeout(renderTimeout);
-          renderTimeout = setTimeout(() => {
-              if (currentPage === 1) renderTable();
-              updateLastPeakWidget();
-              updateHistoryDateRange();
-              if(ind) { ind.textContent = `🗂️ Historial: Cargado (${peakHistoryData.length} reg.)`; ind.style.color = "#28a745"; }
-              const mainLoader = document.getElementById('mainTableLoader');
-              const peakLoader = document.getElementById('peakChartLoader');
-              if(mainLoader) mainLoader.style.display = 'none';
-              if(peakLoader) peakLoader.style.display = 'none';
-          }, 200);
-        }
       } catch (e) { 
         console.error("Error procesando historial peaks:", e);
         const mainLoader = document.getElementById('mainTableLoader');
@@ -1907,66 +2200,61 @@ document.addEventListener('DOMContentLoaded', () => {
       let totalDurationMs = 0;
 
       try {
-        const json = JSON.parse(rawData);
+        const jsonArray = JSON.parse(rawData);
         
-        if (json.contenido_csv) {
-            const lines = json.contenido_csv.split(/\r?\n/);
-            lines.forEach(line => {
-                if (!line.trim()) return;
-                const parts = line.split(',');
-                if (parts.length >= 4) {
-                    labels.push(parts[0].trim());
-                    const timestamp = parts[0].trim();
-                    const type = parts[2].trim();
-                    const valStr = parts[3].trim().toUpperCase();
-                    const event = parts.length > 4 ? parts[4].trim() : '';
-                    const isTrue = (valStr === 'VERDADERO' || valStr === 'TRUE');
+        if (Array.isArray(jsonArray)) {
+            // Ordenar por fecha para un cálculo de duración correcto
+            jsonArray.sort((a, b) => new Date(a.FechaRegistro) - new Date(b.FechaRegistro));
 
-                    labels.push(timestamp);
-                    values.push(valStr === 'VERDADERO' ? 1 : 0);
-                    values.push(isTrue ? 1 : 0);
+            jsonArray.forEach(item => {
+                const fechaRegistro = new Date(item.FechaRegistro);
+                const [datePart, timePartWithZ] = item.FechaRegistro.split('T');
+                const timePart = timePartWithZ.substring(0, 8);
 
-                    let durationStr = '';
-                    const currentMs = new Date(timestamp).getTime();
-                    
-                    if (isTrue) {
-                        lastStartTime = currentMs;
-                    } else {
-                        if (lastStartTime !== null && !isNaN(lastStartTime) && !isNaN(currentMs)) {
-                            const diff = (currentMs - lastStartTime) / 1000;
-                            if (diff >= 0) {
-                                durationStr = diff.toFixed(1) + ' s';
-                                totalDurationMs += (currentMs - lastStartTime);
-                            }
-                            lastStartTime = null;
+                const isTrue = item.Valor === true;
+                const statusStr = isTrue ? 'ACTIVO' : 'NORMAL';
+
+                labels.push(`${datePart} ${timePart}`);
+                values.push(isTrue ? 1 : 0);
+
+                let durationStr = '';
+                const currentMs = fechaRegistro.getTime();
+
+                if (isTrue) {
+                    lastStartTime = currentMs;
+                } else {
+                    if (lastStartTime !== null && !isNaN(lastStartTime) && !isNaN(currentMs)) {
+                        const diff = (currentMs - lastStartTime) / 1000;
+                        if (diff >= 0) {
+                            durationStr = diff.toFixed(1) + ' s';
+                            totalDurationMs += (currentMs - lastStartTime);
                         }
+                        lastStartTime = null;
                     }
+                }
 
-                    if (tbody) {
-                        const row = tbody.insertRow();
-                        row.innerHTML = `<td>${timestamp}</td><td>${type}</td><td>${valStr}</td><td>${event}</td><td style="font-weight:bold;">${durationStr}</td>`;
+                if (tbody) {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `<td>${datePart}</td><td>${timePart}</td><td>${statusStr}</td><td style="font-weight:bold;">${durationStr}</td>`;
+                    // Si el estado es ACTIVO, resaltar la fila
+                    if (isTrue) {
+                        row.classList.add('slow-down-active');
                     }
                 }
             });
-        } 
-        else if (Array.isArray(json)) {
-          json.forEach(item => {
-            labels.push(item.hora || item.time || item.fecha);
-            values.push(item.valor || item.value || item.status);
-          });
         }
       } catch (e) {
         console.error("Error parseando respuesta Slow Down:", e);
       }
 
       if (totalDurationMs > 0) {
-          const seconds = Math.floor((totalDurationMs / 1000) % 60);
-          const minutes = Math.floor((totalDurationMs / (1000 * 60)) % 60);
-          const hours = Math.floor((totalDurationMs / (1000 * 60 * 60)));
-          const timeEl = document.getElementById('totalSlowDownTime');
-          const analysisEl = document.getElementById('slowDownAnalysis');
-          if(timeEl) timeEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
-          if(analysisEl) analysisEl.style.display = 'block';
+            const seconds = Math.floor((totalDurationMs / 1000) % 60);
+            const minutes = Math.floor((totalDurationMs / (1000 * 60)) % 60);
+            const hours = Math.floor((totalDurationMs / (1000 * 60 * 60)));
+            const timeEl = document.getElementById('totalSlowDownTime');
+            const analysisEl = document.getElementById('slowDownAnalysis');
+            if(timeEl) timeEl.textContent = `${hours}h ${minutes}m ${seconds}s`;
+            if(analysisEl) analysisEl.style.display = 'block';
       } else {
           const analysisEl = document.getElementById('slowDownAnalysis');
           if(analysisEl) analysisEl.style.display = 'none';
@@ -2106,6 +2394,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(updateClock, 1000);
   updateClock();
 
+});
+
   function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if(!container) return;
@@ -2120,4 +2410,3 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => toast.remove(), 500);
     }, 3000);
   }
-});

@@ -12,10 +12,11 @@
       --color-bg-dark: #0f172a;
       --color-surface-dark: #1e293b;
       --color-text-dark: #e2e8f0;
-      --color-primary: #0a3d66;
-      --color-primary-light: #0a72c1;
-      --color-accent: #ffc72c;
-      --color-table-header-bg-light: var(--color-primary);
+      --color-primary: #334155; /* Slate 700 - Industrial Steel */
+      --color-primary-light: #475569; /* Slate 600 */
+      --color-accent: #f97316; /* Orange - Safety Industrial */
+      --color-border: #e2e8f0;
+      --color-table-header-bg-light: #e2e8f0;
       --color-table-header-bg-dark: #144372;
       --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
@@ -36,6 +37,7 @@
     body.dark-mode {
       background-color: var(--color-bg-dark);
       color: var(--color-text-dark);
+      --color-border: #334155;
     }
     #logo-fijo {
       width: 120px;
@@ -69,19 +71,19 @@
       color: var(--color-text-dark);
     }
     canvas {
-      background-color: #f5faff;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(10, 61, 102, 0.2);
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       display: block;
       margin: 0 auto 25px auto;
       width: 100% !important;
       max-width: 1600px;
-      transition: background-color 0.4s ease;
+      transition: background-color 0.4s ease, box-shadow 0.4s ease;
     }
     body.dark-mode canvas {
-      background-color: #cbd5e1; /* Gris azulado claro para contraste con texto oscuro */
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-      filter: brightness(0.95);
+      background-color: var(--color-surface-dark);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border: 1px solid #334155;
     }
     #controls {
       text-align: center;
@@ -158,7 +160,7 @@
     }
     th {
       background-color: var(--color-primary);
-      color: #fff;
+      color: var(--color-text-dark);
       padding: 12px 15px;
       text-align: left;
       font-weight: 600;
@@ -167,6 +169,10 @@
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+    body.light-mode th {
+      background-color: var(--color-table-header-bg-light);
+      color: var(--color-text-light);
     }
     td {
       padding: 12px 15px;
@@ -177,12 +183,12 @@
       transition: background-color 0.2s ease;
     }
     tbody tr:hover {
-      background-color: rgba(10, 61, 102, 0.05);
+      background-color: rgba(0, 0, 0, 0.03);
     }
 
     /* Dark Mode para Tablas */
     body.dark-mode table { color: var(--color-text-dark); }
-    body.dark-mode th {
+    body.dark-mode th, body.dark-mode .modal-body-custom th {
       background-color: var(--color-surface-dark);
       color: var(--color-text-dark);
     }
@@ -334,10 +340,10 @@
     }
 
     /* Estilos para los recuadros de STS */
-    .sts-box {
+    .metric-card {
       position: relative; /* Necesario para posicionar el icono absoluto */
       padding: 20px;
-      background: linear-gradient(135deg, #2c6ea8, #184e80); /* Azul más profundo y profesional */
+      background: linear-gradient(135deg, #475569, #1e293b); /* Industrial Slate */
       text-align: center;
       border-radius: 16px;
       color: #fff;
@@ -347,8 +353,38 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      min-height: 140px;
+      min-height: 160px;
       border: 1px solid rgba(255,255,255,0.1); /* Borde sutil para definición */
+      overflow: hidden;
+    }
+
+    /* Animación de textura de carbón */
+    @keyframes coalGrain {
+      0%, 100% { transform: translate(0, 0); }
+      10% { transform: translate(-1%, -1%); }
+      30% { transform: translate(1%, 1%); }
+      50% { transform: translate(-0.5%, 1.5%); }
+      70% { transform: translate(1.5%, -0.5%); }
+      90% { transform: translate(-1%, 0.5%); }
+    }
+
+    .metric-card::after {
+      content: '';
+      position: absolute;
+      top: -20%;
+      left: -20%;
+      width: 140%;
+      height: 140%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 250 250' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.08; /* Textura muy sutil */
+      pointer-events: none;
+      z-index: 0;
+      animation: coalGrain 6s steps(5) infinite;
+      mix-blend-mode: overlay;
+    }
+    .metric-card > *:not(::before):not(::after) {
+      position: relative;
+      z-index: 2;
     }
     /* Iconos decorativos */
     .card-icon {
@@ -361,26 +397,51 @@
       color: #fff;
       pointer-events: none;
     }
-    .sts-box:hover {
+    .metric-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 15px 30px rgba(0,0,0,0.15), 0 10px 10px rgba(0,0,0,0.1);
     }
-    .sts-title {
+    .metric-title {
       font-size: 1.2rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       opacity: 0.9;
       font-weight: bold;
-      margin-bottom: 10px;
+      margin-bottom: 10px; /* Keep this for spacing */
       color: #fff;
     }
-    .sts-data {
+    .metric-value {
       font-size: 2rem;
       font-weight: bold;
       line-height: 1.2;
       text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
     .sts-unit { font-size: 1rem; font-weight: normal; margin-left: 5px; }
+    
+    /* Modificadores de color para tarjetas */
+    .metric-card--primary {
+      background: linear-gradient(135deg, var(--color-primary-light), var(--color-primary));
+    }
+    .metric-card--accent {
+      background: linear-gradient(135deg, var(--color-accent), #dd6b20);
+    }
+    .metric-card--danger {
+      background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+    .metric-card--success {
+      background: linear-gradient(135deg, #28a745, #1c6b2e);
+    }
+
+    /* Clases de estado para la tarjeta de viento */
+    .metric-card.status-critical { border: 3px solid #dc3545; box-shadow: 0 0 15px rgba(220, 53, 69, 0.6); }
+    .metric-card.status-high { border: 3px solid #fd7e14; box-shadow: 0 0 15px rgba(253, 126, 20, 0.6); }
+    .metric-card.status-warning { border: 3px solid #ffc107; box-shadow: 0 0 15px rgba(255, 193, 7, 0.6); }
+
     .slow-down-legend {
       font-size: 0.75rem;
       font-weight: 800;
@@ -401,6 +462,16 @@
       100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
     }
 
+    /* Indicadores de Tendencia */
+    .trend-indicator {
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 8px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.2);
+    }
     /* Toast Notifications (Notificaciones Flotantes) */
     #toast-container {
       position: fixed;
@@ -427,8 +498,11 @@
     }
     .toast.success { border-left-color: #28a745; }
     .toast.error { border-left-color: #dc3545; }
-    .toast.info { border-left-color: #0a72c1; }
+    .toast.info { border-left-color: var(--color-accent); }
     
+    .toast.fade-out {
+      animation: fadeOut 0.5s ease-out forwards;
+    }
     @keyframes slideIn {
       from { transform: translateX(100%); opacity: 0; }
       to { transform: translateX(0); opacity: 1; }
@@ -481,16 +555,11 @@
       align-items: center;
     }
     body.dark-mode .main-header {
-       background: rgba(255, 255, 255, 0.95); /* Fondo blanco translúcido */
-      border-bottom: 1px solid #e5e7eb; /* Borde gris claro */
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1); /* Sombra más notoria */
-    }
-    /* Ajustes para texto y elementos dentro del header en modo oscuro con fondo blanco */
-    body.dark-mode .main-header h1 {
-      color: var(--color-primary);
+      background: rgba(30, 41, 59, 0.85); /* Usar color de superficie oscuro */
+      border-color: #334155;
     }
     body.dark-mode .main-header .header-clock {
-      color: var(--color-text-light);
+      color: var(--color-text-dark);
     }
     body.dark-mode .main-header #connectionStatus {
       background-color: #f3f4f6; /* Fondo gris muy claro */
@@ -520,10 +589,10 @@
         grid-template-columns: repeat(2, 1fr); /* Forzar 2 columnas para un layout más limpio y legible */
       }
 
-      .sts-box { padding: 10px; min-height: 100px; border-radius: 12px; }
-      .sts-title { font-size: 0.8rem; margin-bottom: 5px; }
-      .sts-data { font-size: 1.3rem; }
-      .sts-unit { font-size: 0.75rem; }
+      .metric-card { padding: 15px 10px; min-height: 150px; border-radius: 12px; }
+      .metric-title { font-size: 0.8rem; margin-bottom: 5px; }
+      .metric-value { font-size: 1.3rem; }
+      .metric-unit { font-size: 0.75rem; }
       .last-slow-info { font-size: 0.7rem; padding: 4px 6px; margin-top: 8px; }
 
       #connectionStatus { font-size: 0.8rem; margin-right: 0; margin-bottom: 10px; width: 100%; justify-content: center; }
@@ -622,11 +691,11 @@
       }
 
       /* Reducir tamaño de tarjetas para impresión */
-      .sts-box {
+      .metric-card {
         min-height: 80px !important;
         padding: 10px !important;
       }
-      .sts-data {
+      .metric-value {
         font-size: 1.4rem !important;
       }
 
@@ -637,7 +706,7 @@
         height: auto !important;
         break-inside: avoid;
       }
-      .sts-box {
+      .metric-card {
         break-inside: avoid;
         page-break-inside: avoid;
         box-shadow: none !important;
@@ -703,6 +772,9 @@
       body.printing-modal #kwhPagination {
         display: none !important;
       }
+      body.printing-modal .modal-filter-controls {
+        display: none !important;
+      }
       body.printing-modal .table-container {
         max-height: none !important;
         overflow: visible !important;
@@ -758,8 +830,8 @@
       margin: 2% auto; 
       padding: 0;
       border: none;
-      width: 95%; 
-      max-width: 1300px; /* Tamaño estándar para todas las ventanas */
+      width: 95%;
+      max-width: 1300px; /* Aumentado para mejor visualización */
       border-radius: 12px;
       position: relative;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -819,7 +891,7 @@
     /* Estilos mejorados para el Modal KWH */
     .chart-container-modal {
       position: relative; 
-      height: 300px; 
+      height: 550px; 
       flex: 1; 
       min-width: 280px;
       background: #fff;
@@ -1090,16 +1162,16 @@
       box-shadow: 0 20px 50px rgba(0,0,0,0.4);
     }
     /* Corrección de color para títulos en tarjetas dentro de modales (fondo oscuro) */
-    .modal-body-custom .sts-box .sts-title {
+    .modal-body-custom .metric-card .metric-title {
       color: #fff !important;
     }
     
     /* Ajuste de tarjetas en el modal para optimizar espacio y mejorar visualización */
-    .modal-body-custom .sts-box {
+    .modal-body-custom .metric-card {
       min-height: 110px;
       padding: 12px;
     }
-    .modal-body-custom .sts-data {
+    .modal-body-custom .metric-value {
       font-size: 1.6rem;
     }
 
@@ -1159,6 +1231,10 @@
       border-radius: 0 0 8px 8px;
     }
     
+    .modal-filter-controls {
+      display: flex; gap: 10px; align-items: center; margin-bottom: 15px;
+    }
+
     /* Dark mode adjustments for collapsible */
     body.dark-mode .collapsible-btn {
       background-color: rgba(255, 255, 255, 0.05);
@@ -1392,16 +1468,24 @@
       transition: left 0.5s;
       pointer-events: none;
     }
-    .sts-box:hover::before {
+    .metric-card:hover::before {
       left: 150%;
       transition: left 0.7s ease-in-out;
     }
 
     /* 4. Tipografía más moderna (Tracking ajustado) */
-    h1, h2, h3, .sts-title {
+    h1, h2, h3, .metric-title {
       letter-spacing: -0.02em;
     }
-
+    
+    /* Estilo para subtítulos dentro de modales */
+    .modal-subtitle {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      color: var(--color-primary);
+    }
+    body.dark-mode .modal-subtitle { color: var(--color-text-dark); }
     /* --- PANTALLA DE CARGA (SPLASH SCREEN) --- */
     #app-loader {
       position: fixed;
@@ -1501,35 +1585,52 @@
       50% { transform: scaleX(0.7); opacity: 0.2; }
     }
 
-    /* --- ESTILOS PARA LA PANTALLA DE LOGIN --- */
-    #login-screen {
+    /* Estilo para resaltar filas activas en la tabla de Slow Down */
+    .slow-down-active {
+      background-color: #f8d7da !important; /* Rojo claro de alerta */
+      color: #721c24 !important;
+      font-weight: 600;
+    }
+
+    body.dark-mode .slow-down-active {
+      background-color: rgba(220, 53, 69, 0.25) !important;
+      color: #f8d7da !important;
+    }
+
+    /* Estilo para el botón de Salir/Logout */
+    #logoutBtn { background-color: #dc3545; }
+    #logoutBtn:hover { background-color: #c82333; }
+    body.dark-mode #logoutBtn { background-color: #c82333; border-color: #c82333; color: #fff; }
+    body.dark-mode #logoutBtn:hover { background-color: #dc3545; }
+
+    /* --- Estilos para la Pantalla de Login --- */
+    #login-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       background-color: var(--color-bg-light);
+      z-index: 100000;
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 100000;
       transition: background-color 0.4s ease;
     }
-    body.dark-mode #login-screen {
+    body.dark-mode #login-overlay {
       background-color: var(--color-bg-dark);
     }
-    .login-box {
+    .login-container {
       background-color: #fff;
       padding: 40px;
       border-radius: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      text-align: center;
       width: 100%;
       max-width: 400px;
-      text-align: center;
-      border: 1px solid #e2e8f0;
-      animation: fadeInUp 0.5s ease-out;
+      border: 1px solid #eee;
     }
-    body.dark-mode .login-box {
+    body.dark-mode .login-container {
       background-color: var(--color-surface-dark);
       border-color: #334155;
     }
@@ -1537,50 +1638,25 @@
       width: 100px;
       margin-bottom: 20px;
     }
-    .login-box h2 {
+    .login-container h2 {
       margin-top: 0;
       margin-bottom: 25px;
-      color: var(--color-primary);
     }
-    body.dark-mode .login-box h2 {
-      color: var(--color-text-dark);
-    }
-    .input-group {
-      margin-bottom: 20px;
-      text-align: left;
-    }
-    .input-group label {
-      display: block;
-      margin-bottom: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      color: var(--color-text-light);
-    }
-    body.dark-mode .input-group label {
-      color: var(--color-text-dark);
-    }
-    .input-group input {
+    #login-form input {
       width: 100%;
-      padding: 12px 15px;
+      padding: 12px;
+      margin-bottom: 15px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-size: 1rem;
-      transition: border-color 0.3s, box-shadow 0.3s;
     }
-    .input-group input:focus {
-      outline: none;
-      border-color: var(--color-primary-light);
-      box-shadow: 0 0 0 3px rgba(10, 114, 193, 0.2);
+    body.dark-mode #login-form input {
+      background-color: #334155;
+      border-color: #475569;
+      color: var(--color-text-dark);
     }
-    #login-button {
+    #login-form button {
       width: 100%;
       padding: 12px;
       font-size: 1rem;
-      margin: 10px 0 0 0;
-    }
-    .login-error-message {
-      color: #dc3545;
-      margin-top: 15px;
-      font-weight: 600;
-      min-height: 20px;
     }
