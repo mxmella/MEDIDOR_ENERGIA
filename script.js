@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   // --- LÓGICA DE AUTENTICACIÓN Y SESIÓN ---
   // Puedes cambiar el usuario y contraseña aquí
-  const CORRECT_USER = 'admin';
-  const CORRECT_PASS = 'admin';
+  const CORRECT_USER = 'mantencion';
+  const CORRECT_PASS = 'mantencion';
 
   const loginOverlay = document.getElementById('login-overlay');
   const mainContent = document.getElementById('main-content');
