@@ -1660,3 +1660,30 @@
       padding: 12px;
       font-size: 1rem;
     }
+
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrapper input {
+      padding-right: 40px; /* Espacio para el icono */
+    }
+    .toggle-password-icon {
+      position: absolute;
+      right: 12px;
+      cursor: pointer;
+      color: #6c757d;
+      width: 20px;
+      height: 20px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+    }
+    body.dark-mode .toggle-password-icon {
+      color: #9ca3af;
+    }
+    .toggle-password-icon:hover {
+      color: var(--color-primary);
+    }
