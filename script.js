@@ -206,6 +206,76 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Helper para manejar las tarjetas que siguen esperando datos cuando se pierde la conexión
+  function updatePendingCardsDisplay() {
+    const isConnected = client && client.connected;
+    const isWarning = isConnected && (Date.now() - lastDataTime > DATA_TIMEOUT);
+    
+    const cards = [
+      { id: 'topic1', subId: null, loaderId: 'topic1Loader', contentId: 'topic1Content', originalUnit: 'Amp' }, // CGE
+      { id: 'topic2', subId: null, loaderId: 'topic2Loader', contentId: 'topic2Content', originalUnit: 'Amp' }, // Consumo
+      { id: 'topic3', subId: 'kwh_sts1', loaderId: 'topic3Loader', contentId: 'topic3Content', originalUnit: 'Amp' }, // STS1
+      { id: 'topic4', subId: 'kwh_sts2', loaderId: 'topic4Loader', contentId: 'topic4Content', originalUnit: 'Amp' }, // STS2
+      { id: 'topic5', subId: 'kwh_sts3', loaderId: 'topic5Loader', contentId: 'topic5Content', originalUnit: 'Amp' }, // STS3
+      { id: 'topic6', subId: 'kwh_sts4', loaderId: 'topic6Loader', contentId: 'topic6Content', originalUnit: 'Amp' }, // STS4
+      { id: 'topic7', subId: 'kwh_sts5', loaderId: 'topic7Loader', contentId: 'topic7Content', originalUnit: 'Amp' }, // STS5
+      { id: 'Viento_STS1', subId: 'topic8', loaderId: 'topic8Loader', contentId: 'topic8Content', originalUnit: 'm/s' } // Viento
+    ];
+
+    let statusText = "";
+    let subText = "";
+    
+    if (!isConnected) {
+      statusText = "Sin Conexión";
+      subText = "Comprobar red";
+    } else if (isWarning) {
+      statusText = "Sin Flujo";
+      subText = "Verificar Broker";
+    }
+
+    cards.forEach(card => {
+      const loader = document.getElementById(card.loaderId);
+      const content = document.getElementById(card.contentId);
+      const mainVal = document.getElementById(card.id);
+      
+      if (!loader || !content) return;
+
+      if (statusText) {
+        const isCurrentlyLoading = loader.style.display !== 'none';
+        const isShowingError = mainVal && (mainVal.textContent.includes("Sin Conexión") || mainVal.textContent.includes("Sin Flujo"));
+        
+        if (isCurrentlyLoading || isShowingError) {
+          loader.style.display = 'none';
+          content.style.display = 'block';
+          if (mainVal) {
+            mainVal.innerHTML = `<span style="font-size: 1.1rem; color: #ffc107; font-weight: bold;">${statusText}</span>`;
+          }
+          if (card.subId) {
+            const subVal = document.getElementById(card.subId);
+            if (subVal) {
+              subVal.innerHTML = `<span style="font-size: 0.8rem; opacity: 0.7;">${subText}</span>`;
+            }
+          }
+        }
+      } else {
+        const isShowingError = mainVal && (mainVal.textContent.includes("Sin Conexión") || mainVal.textContent.includes("Sin Flujo"));
+        if (isShowingError) {
+          loader.style.display = 'block';
+          content.style.display = 'none';
+          if (mainVal) {
+            mainVal.innerHTML = `-- <span class="sts-unit">${card.originalUnit}</span>`;
+          }
+          if (card.subId) {
+            const subVal = document.getElementById(card.subId);
+            if (subVal) {
+              subVal.innerHTML = `-- <span class="sts-unit">kWh</span>`;
+            }
+          }
+        }
+      }
+    });
+  }
+
   // Verificar flujo de datos periódicamente
   setInterval(() => {
     if (document.hidden) return; // No verificar en segundo plano para evitar falsos positivos
@@ -223,6 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(textEl) textEl.textContent = 'Conectado';
       }
     }
+
+    updatePendingCardsDisplay();
   }, 2000);
 
   // Crear degradados para el gráfico principal
@@ -231,8 +303,6 @@ document.addEventListener('DOMContentLoaded', () => {
   gradientCGE.addColorStop(1, 'rgba(51, 65, 85, 0.1)');  // Slate 700
 
   const gradientGruas = ctx.createLinearGradient(0, 0, 0, 400);
-  gradientGruas.addColorStop(0, 'rgba(255, 199, 44, 0.6)');
-  gradientGruas.addColorStop(1, 'rgba(255, 199, 44, 0.05)');
   gradientGruas.addColorStop(0, 'rgba(249, 115, 22, 0.6)'); // Naranja corporativo
   gradientGruas.addColorStop(1, 'rgba(249, 115, 22, 0.05)');
 
@@ -263,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }, {
       label: 'I_MAX_GRUAS', 
       data: initData2,
-      borderColor: '#ffc72c',
       borderColor: '#f97316', // Naranja corporativo
       backgroundColor: gradientGruas,
       fill: true,
@@ -396,6 +465,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let rowsPerPage = 10;
   const maxPages = 150; 
   let currentPage = 1;
+  let peakRequestTimeout = null;
+  let initialDataTimeout = null;
 
   const btnPrev = document.getElementById('btnPrev');
   const btnNext = document.getElementById('btnNext');
@@ -423,6 +494,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable() {
     if(!peakHistoryTableBody) return;
     peakHistoryTableBody.innerHTML = '';
+    
+    if (peakHistoryData.length === 0) {
+      const row = peakHistoryTableBody.insertRow();
+      row.innerHTML = `<td colspan="4" style="text-align: center; font-style: italic; color: #888; padding: 20px;">No se encontraron registros de peaks para esta fecha.</td>`;
+      if(pageInfo) pageInfo.textContent = `Página 1 de 1`;
+      if(btnPrev) btnPrev.disabled = true;
+      if(btnNext) btnNext.disabled = true;
+      return;
+    }
+
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
     const pageData = peakHistoryData.slice(start, end);
@@ -457,6 +538,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const dateEl = document.getElementById('lastPeakDate');
       if(valEl) valEl.innerHTML = `${latest.value.toFixed(2)} <span class="sts-unit">Amp</span>`;
       if(dateEl) dateEl.textContent = displayDate;
+    } else {
+      const valEl = document.getElementById('lastPeakValue');
+      const dateEl = document.getElementById('lastPeakDate');
+      if(valEl) valEl.innerHTML = `Sin Peaks`;
+      if(dateEl) dateEl.textContent = "No hay registros";
     }
     if(loader) loader.style.display = 'none';
     if(content) content.style.display = 'block';
@@ -976,12 +1062,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(dParts.length !== 3) continue;
         
         let cleanTime = timeStr.toLowerCase().replace(/\./g, '').replace(/\s/g, '');
-        const tMatch = cleanTime.match(/^(\d{1,2}):(\d{1,2}):(\d{1,2})([ap]m)?/);
+        const tMatch = cleanTime.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?([ap]m)?/);
         
         if (tMatch) {
             let h = parseInt(tMatch[1]);
             const m = parseInt(tMatch[2]);
-            const s = parseInt(tMatch[3]);
+            const s = tMatch[3] ? parseInt(tMatch[3]) : 0;
             const ampm = tMatch[4]; // am o pm
             
             if(ampm === 'pm' && h !== 12) h += 12;
@@ -1586,11 +1672,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const mainLoader = document.getElementById('mainTableLoader');
     if(mainLoader) mainLoader.style.display = 'block';
     
+    const lastPeakLoader = document.getElementById('lastPeakLoader');
+    const lastPeakContent = document.getElementById('lastPeakContent');
+    if(lastPeakLoader) lastPeakLoader.style.display = 'block';
+    if(lastPeakContent) lastPeakContent.style.display = 'none';
+
+    const peakChartLoader = document.getElementById('peakChartLoader');
+    if(peakChartLoader) peakChartLoader.style.display = 'block';
+
     // Limpiar datos anteriores
     peakHistoryData = [];
     renderTable();
 
     client.publish('CONSULTA_PEAKS', dateVal);
+
+    if (peakRequestTimeout) clearTimeout(peakRequestTimeout);
+    peakRequestTimeout = setTimeout(() => {
+      if (peakHistoryData.length === 0) {
+        if(histInd) {
+          histInd.textContent = "🗂️ Historial: Sin registros";
+          histInd.style.color = "#ffc107";
+        }
+        if(mainLoader) mainLoader.style.display = 'none';
+        if(lastPeakLoader) lastPeakLoader.style.display = 'none';
+        if(lastPeakContent) lastPeakContent.style.display = 'block';
+        if(peakChartLoader) peakChartLoader.style.display = 'none';
+
+        updateLastPeakWidget();
+        updatePeakChart([]);
+        renderTable();
+        showToast("No se recibieron registros de peaks.", "info");
+      }
+    }, 5000);
   };
    // Suscripción al topic
   client.on('connect', () => {
@@ -1602,6 +1715,44 @@ document.addEventListener('DOMContentLoaded', () => {
     if(statusEl) statusEl.className = 'status-connected';
 
     lastDataTime = Date.now();
+    updatePendingCardsDisplay();
+
+    // Temporizador para quitar loaders de tarjetas sin datos recibidos tras conectar
+    if (initialDataTimeout) clearTimeout(initialDataTimeout);
+    initialDataTimeout = setTimeout(() => {
+      const cards = [
+        { id: 'topic1', subId: null, loaderId: 'topic1Loader', contentId: 'topic1Content', originalUnit: 'Amp' }, // CGE
+        { id: 'topic2', subId: null, loaderId: 'topic2Loader', contentId: 'topic2Content', originalUnit: 'Amp' }, // Consumo
+        { id: 'topic3', subId: 'kwh_sts1', loaderId: 'topic3Loader', contentId: 'topic3Content', originalUnit: 'Amp' }, // STS1
+        { id: 'topic4', subId: 'kwh_sts2', loaderId: 'topic4Loader', contentId: 'topic4Content', originalUnit: 'Amp' }, // STS2
+        { id: 'topic5', subId: 'kwh_sts3', loaderId: 'topic5Loader', contentId: 'topic5Content', originalUnit: 'Amp' }, // STS3
+        { id: 'topic6', subId: 'kwh_sts4', loaderId: 'topic6Loader', contentId: 'topic6Content', originalUnit: 'Amp' }, // STS4
+        { id: 'topic7', subId: 'kwh_sts5', loaderId: 'topic7Loader', contentId: 'topic7Content', originalUnit: 'Amp' }, // STS5
+        { id: 'Viento_STS1', subId: 'topic8', loaderId: 'topic8Loader', contentId: 'topic8Content', originalUnit: 'm/s' } // Viento
+      ];
+
+      cards.forEach(card => {
+        const loader = document.getElementById(card.loaderId);
+        const content = document.getElementById(card.contentId);
+        const mainVal = document.getElementById(card.id);
+        
+        // Si el loader sigue activo, significa que no ha llegado ningún mensaje para este topic
+        if (loader && loader.style.display !== 'none') {
+          loader.style.display = 'none';
+          if (content) content.style.display = 'block';
+          
+          if (mainVal) {
+            mainVal.innerHTML = `<span style="font-size: 1.2rem; color: #a0aec0; font-weight: normal;">Sin datos</span>`;
+          }
+          if (card.subId) {
+            const subVal = document.getElementById(card.subId);
+            if (subVal) {
+              subVal.innerHTML = `<span style="font-size: 0.85rem; opacity: 0.5;">-- kWh</span>`;
+            }
+          }
+        }
+      });
+    }, 10000);
     client.subscribe('MEDIDOR_CGE');
     client.subscribe('I_MAX_GRUAS');
     client.subscribe('I_STS1');
@@ -1668,22 +1819,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusEl = document.getElementById('connectionStatus');
     if(textEl) textEl.textContent = 'Reconectando...';
     if(statusEl) statusEl.className = 'status-reconnecting';
+    updatePendingCardsDisplay();
   });
 
   client.on('close', () => {
+    if (initialDataTimeout) {
+      clearTimeout(initialDataTimeout);
+      initialDataTimeout = null;
+    }
     const textEl = document.getElementById('connText');
     const statusEl = document.getElementById('connectionStatus');
     if(textEl) textEl.textContent = 'Desconectado';
     if(statusEl) statusEl.className = 'status-disconnected';
+    updatePendingCardsDisplay();
   });
 
   client.on('error', (err) => {
+    if (initialDataTimeout) {
+      clearTimeout(initialDataTimeout);
+      initialDataTimeout = null;
+    }
     console.error('Error MQTT:', err);
     showToast("Error de conexión MQTT", "error");
     const textEl = document.getElementById('connText');
     const statusEl = document.getElementById('connectionStatus');
     if(textEl) textEl.textContent = 'Error de conexión';
     if(statusEl) statusEl.className = 'status-disconnected';
+    updatePendingCardsDisplay();
   });
 
   client.on('message', (topic, message) => {
@@ -2021,11 +2183,6 @@ document.addEventListener('DOMContentLoaded', () => {
               if(status) status.style.display = "none"; 
               
               updateKwhChart(parsedItems);
-
-              if (parsedItems.length === 0) {
-                if(loader) loader.style.display = "none";
-                if(status) { status.textContent = "No se encontraron datos válidos."; status.style.display = "block"; }
-              }
             } else {
               if(loader) loader.style.display = "none";
               if(status) { status.textContent = "No se encontraron datos históricos."; status.style.display = "block"; }
@@ -2123,6 +2280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (topic === 'HISTORIAL_PEAKS') {
+      if (peakRequestTimeout) clearTimeout(peakRequestTimeout);
       try {
         const historyData = JSON.parse(message.toString());
         
@@ -2132,10 +2290,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if(ind) { ind.textContent = `Total de eventos de peak: 0`; ind.style.color = "#ffc107"; }
             const mainLoader = document.getElementById('mainTableLoader');
             if(mainLoader) mainLoader.style.display = 'none';
+            
+            const peakLoader = document.getElementById('peakChartLoader');
+            if(peakLoader) peakLoader.style.display = 'none';
+
+            peakHistoryData = [];
+            updateLastPeakWidget();
+            updatePeakChart([]);
+            renderTable();
             return;
           }
           // Procesar el nuevo formato JSON
-          const processedData = historyData.map(item => {
+          let processedData = historyData.map(item => {
             const fechaRegistro = new Date(item.FechaRegistro);
             return {
               ID: item.ID,
