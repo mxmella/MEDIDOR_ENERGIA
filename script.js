@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Variables para Watchdog (Monitor de flujo de datos)
   let lastDataTime = Date.now();
   const DATA_TIMEOUT = 15000; // 15 segundos sin datos = alerta
+  const CGE_LIMIT_AMP = 140;  // Límite operativo del medidor CGE (A)
 
   // Optimización: Manejo de reconexión al volver a la pestaña
   document.addEventListener('visibilitychange', () => {
@@ -295,12 +296,110 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updatePendingCardsDisplay();
+    updateExecHero();
   }, 2000);
+
+  // ===== Banner Ejecutivo: estado general, disponibilidad y última actualización =====
+  const EXEC_FEEDS = ['MEDIDOR_CGE', 'I_STS1', 'I_STS2', 'I_STS3', 'I_STS4', 'I_STS5', 'Viento_STS1'];
+  const feedLastSeen = new Map();
+  const WIND_WARN = 18;          // m/s — umbral de viento fuerte del panel
+  const EXEC_FEED_WINDOW = 20000; // 20 s sin dato = fuente no disponible
+
+  function updateExecHero() {
+    const led = document.getElementById('execLed');
+    if (!led) return;
+    const statusEl = document.getElementById('execStatus');
+    const detailEl = document.getElementById('execDetail');
+    const availNum = document.getElementById('execAvailNum');
+    const availSub = document.getElementById('execAvailSub');
+    const availBar = document.getElementById('execAvailBar');
+    const loadNum = document.getElementById('execLoadNum');
+    const loadSub = document.getElementById('execLoadSub');
+    const loadBar = document.getElementById('execLoadBar');
+    const updateEl = document.getElementById('execUpdate');
+    const updateSub = document.getElementById('execUpdateSub');
+
+    const isConnected = client && client.connected;
+    const now = Date.now();
+    const staleMs = now - lastDataTime;
+
+    // Valores operativos — límite del medidor CGE fijo en 140 A
+    const cgePct = (cgeCurrentAmp / CGE_LIMIT_AMP) * 100;
+    const windVal = parseFloat((document.getElementById('Viento_STS1') || { textContent: '' }).textContent) || 0;
+    const slowCranes = [];
+    for (let i = 3; i <= 7; i++) {
+      const cell = document.getElementById(`topic${i}-cell`);
+      const bg = cell ? cell.style.backgroundColor : '';
+      if (bg === 'rgb(220, 53, 69)' || bg === '#dc3545') slowCranes.push(i - 2);
+    }
+
+    // ---- Estado general (gana la condición más crítica) ----
+    let status = 'OPERACIÓN NORMAL';
+    let detail = 'Todos los sistemas operativos';
+    let tone = 'green';
+    if (!isConnected) {
+      status = 'SIN CONEXIÓN';
+      detail = 'Verificar conexión al broker';
+      tone = 'red';
+    } else if (staleMs > DATA_TIMEOUT) {
+      status = 'DATOS DESACTUALIZADOS';
+      detail = `Sin flujo de datos (${Math.round(staleMs / 1000)} s)`;
+      tone = 'amber';
+    } else if (cgeCurrentAmp > CGE_LIMIT_AMP) {
+      status = 'SOBRECARGA';
+      detail = `CGE en ${cgeCurrentAmp.toFixed(0)} A — sobre el límite de ${CGE_LIMIT_AMP} A`;
+      tone = 'red';
+    } else if (slowCranes.length) {
+      status = 'SLOWDOWN ACTIVO';
+      detail = `STS ${slowCranes.join(', ')} en reducción de velocidad`;
+      tone = 'red';
+    } else if (windVal >= WIND_WARN) {
+      status = 'VIENTO FUERTE';
+      detail = `${windVal.toFixed(1)} m/s en el muelle`;
+      tone = 'amber';
+    } else if (cgePct >= 80) {
+      status = 'CARGA ELEVADA';
+      detail = `CGE al ${Math.round(cgePct)}% del límite (${CGE_LIMIT_AMP} A)`;
+      tone = 'amber';
+    }
+    led.className = 'exec-led ' + tone;
+    statusEl.textContent = status;
+    detailEl.textContent = detail;
+
+    // ---- Disponibilidad de datos (7 fuentes) ----
+    const fresh = EXEC_FEEDS.filter(t => now - (feedLastSeen.get(t) || 0) <= EXEC_FEED_WINDOW).length;
+    const avail = Math.round((fresh / EXEC_FEEDS.length) * 100);
+    availNum.textContent = avail + '%';
+    availBar.style.width = avail + '%';
+    availBar.className = 'exec-bar-fill ' + (avail >= 90 ? 'green' : avail >= 70 ? 'amber' : 'red');
+    availSub.textContent = `${fresh}/${EXEC_FEEDS.length} fuentes con datos`;
+
+    // ---- Última actualización ----
+    const d = new Date(lastDataTime);
+    updateEl.textContent = d.toLocaleTimeString('es-CL');
+    const secs = Math.max(0, Math.round(staleMs / 1000));
+    const ago = secs < 60 ? `hace ${secs} s` : secs < 3600 ? `hace ${Math.floor(secs / 60)} min` : `hace ${Math.floor(secs / 3600)} h`;
+    updateSub.textContent = !isConnected ? 'Desconectado' : (staleMs > DATA_TIMEOUT ? `Sin flujo · ${ago}` : `Broker conectado · ${ago}`);
+
+    // ---- Carga CGE vs límite (140 A) ----
+    if (cgeCurrentAmp > 0) {
+      loadNum.textContent = `${cgeCurrentAmp.toFixed(0)}/${CGE_LIMIT_AMP} A`;
+      loadBar.style.width = Math.min(100, cgePct) + '%';
+      loadBar.className = 'exec-bar-fill ' + (cgeCurrentAmp > CGE_LIMIT_AMP ? 'red' : cgePct >= 80 ? 'amber' : 'green');
+      loadSub.textContent = cgeCurrentAmp > CGE_LIMIT_AMP ? 'Sobre el límite máximo (140 A)' : `Límite ${CGE_LIMIT_AMP} A`;
+    } else {
+      loadNum.textContent = '-- A';
+      loadBar.style.width = '0%';
+      loadBar.className = 'exec-bar-fill green';
+      loadSub.textContent = 'Esperando dato del medidor CGE';
+    }
+  }
+  updateExecHero();
 
   // Crear degradados para el gráfico principal
   const gradientCGE = ctx.createLinearGradient(0, 0, 0, 400);
-  gradientCGE.addColorStop(0, 'rgba(71, 85, 105, 0.6)'); // Slate 600
-  gradientCGE.addColorStop(1, 'rgba(51, 65, 85, 0.1)');  // Slate 700
+  gradientCGE.addColorStop(0, 'rgba(29, 78, 216, 0.55)'); // Azul corporativo
+  gradientCGE.addColorStop(1, 'rgba(29, 78, 216, 0.05)');
 
   const gradientGruas = ctx.createLinearGradient(0, 0, 0, 400);
   gradientGruas.addColorStop(0, 'rgba(249, 115, 22, 0.6)'); // Naranja corporativo
@@ -329,7 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
       pointRadius: 0,
       pointHoverRadius: 7,
       borderWidth: 3,
-      hoverBorderWidth: 4
+      hoverBorderWidth: 4,
+      spanGaps: true
     }, {
       label: 'I_MAX_GRUAS', 
       data: initData2,
@@ -340,7 +440,8 @@ document.addEventListener('DOMContentLoaded', () => {
       pointRadius: 0,
       pointHoverRadius: 7,
       borderWidth: 3,
-      hoverBorderWidth: 4
+      hoverBorderWidth: 4,
+      spanGaps: true
     }
   ]
   };
@@ -600,7 +701,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let kwhData = []; // Datos completos sin filtrar
   let kwhFilteredData = []; // Datos filtrados por la búsqueda
   let currentKwhPage = 1;
-  const kwhRowsPerPage = 10;
+  let kwhRowsPerPage = 10;
 
   const btnKwhPrev = document.getElementById('btnKwhPrev');
   const btnKwhNext = document.getElementById('btnKwhNext');
@@ -1495,7 +1596,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const originalRows = kwhRowsPerPage;
     const originalPage = currentKwhPage;
     
+    // Mostrar más filas en el informe impreso
     currentKwhPage = 1;
+    kwhRowsPerPage = 50;
     
     const tsEl = document.getElementById('kwhReportTimestamp');
     if(tsEl) tsEl.textContent = `Generado el: ${new Date().toLocaleString()}`;
@@ -1850,6 +1953,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   client.on('message', (topic, message) => {
     lastDataTime = Date.now();
+    feedLastSeen.set(topic, Date.now());
 
     if (topic === 'MEDIDOR_CGE') {
       const value = parseFloat(message.toString());
@@ -2593,5 +2697,27 @@ document.addEventListener('DOMContentLoaded', () => {
       toast.style.animation = 'fadeOut 0.5s forwards';
       setTimeout(() => toast.remove(), 500);
     }, 3000);
+  }
+
+  // Navegación por secciones (scroll-spy): resalta la sección visible
+  const navSectionIds = ['mediciones', 'sts', 'consumo', 'peaks'];
+  const navPills = document.querySelectorAll('.header-nav .nav-pill');
+  const updateNavSpy = () => {
+    const pos = window.scrollY + 140;
+    let current = 'mediciones';
+    const atBottom = document.documentElement.scrollHeight > window.innerHeight && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 10;
+    if (atBottom) {
+      current = navSectionIds[navSectionIds.length - 1];
+    } else {
+      for (const sid of navSectionIds) {
+        const el = document.getElementById(sid);
+        if (el && el.getBoundingClientRect().top + window.scrollY <= pos) current = sid;
+      }
+    }
+    navPills.forEach(p => p.classList.toggle('active', p.getAttribute('href') === '#' + current));
+  };
+  if (navPills.length) {
+    window.addEventListener('scroll', updateNavSpy, { passive: true });
+    updateNavSpy();
   }
 });

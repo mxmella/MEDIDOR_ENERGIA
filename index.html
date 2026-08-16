@@ -3,13 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Forzar siempre la versión más reciente (dashboard en tiempo real) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Sistema de Gestión Energética</title>
   <link rel="icon" href="logo puerto.png" type="image/png">
 
-  <!-- Chart.js + Zoom Plugin -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=7">
   
 </head>
 <body>
@@ -47,7 +51,7 @@
   </div>
 
   <!-- Contenido Principal de la Aplicación (inicialmente oculto) -->
-  <main id="main-content" style="display: none; width: 100%; display: flex; flex-direction: column; align-items: center;">
+  <main id="main-content" style="display: none; width: 100%; flex-direction: column; align-items: center;">
     <div id="print-page-one">
   <header class="main-header">
     <div class="header-left">
@@ -58,6 +62,12 @@
         <div id="reportTimestamp" class="print-only"></div>
       </div>
     </div>
+    <nav class="header-nav" aria-label="Secciones del panel">
+      <a href="#mediciones" class="nav-pill active">Mediciones</a>
+      <a href="#sts" class="nav-pill">STS</a>
+      <a href="#consumo" class="nav-pill">Consumo</a>
+      <a href="#peaks" class="nav-pill">Peaks</a>
+    </nav>
     <div class="header-controls">
       <div id="connectionStatus"><span class="status-led"></span><span id="connText">Desconectado</span></div>
       <button id="reportBtn"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Informe</button>
@@ -66,8 +76,42 @@
     </div>
   </header>
 
+  <!-- Banner Ejecutivo de Resumen -->
+  <div class="exec-hero" id="execHero">
+    <div class="exec-hero-main">
+      <span class="exec-led" id="execLed"></span>
+      <div class="exec-hero-text">
+        <div class="exec-label">Estado General</div>
+        <div class="exec-status" id="execStatus">Cargando…</div>
+        <div class="exec-detail" id="execDetail">Esperando datos del sistema</div>
+      </div>
+    </div>
+    <div class="exec-block">
+      <div class="exec-label">Disponibilidad</div>
+      <div class="exec-avail">
+        <span class="exec-num" id="execAvailNum">--%</span>
+        <div class="exec-bar"><div class="exec-bar-fill green" id="execAvailBar" style="width: 0%;"></div></div>
+      </div>
+      <div class="exec-sub" id="execAvailSub">7 fuentes de datos</div>
+    </div>
+    <div class="exec-block">
+      <div class="exec-label">Carga CGE vs Límite (140 A)</div>
+      <div class="exec-load">
+        <span class="exec-num" id="execLoadNum">-- A</span>
+        <div class="exec-bar"><div class="exec-bar-fill green" id="execLoadBar" style="width: 0%;"></div></div>
+      </div>
+      <div class="exec-sub" id="execLoadSub">Esperando dato de límite</div>
+    </div>
+    <div class="exec-block">
+      <div class="exec-label">Última Actualización</div>
+      <div class="exec-update" id="execUpdate">--:--:--</div>
+      <div class="exec-sub" id="execUpdateSub">Desconectado</div>
+    </div>
+  </div>
+
   <!-- Recuadros Principales -->
-  <div class="dashboard-grid main-metrics">
+  <h2 class="section-title">⚡ Mediciones en Tiempo Real</h2>
+  <div id="mediciones" class="dashboard-grid main-metrics">
     <div id="topic1-cell" class="metric-card metric-card--primary" style="cursor: pointer;" onclick="openCgeModal()">
       <!-- Icono Rayo -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
@@ -118,7 +162,8 @@
   </div>
   
    <!-- Nuevos topics I_STS1, I_STS2, I_STS3, I_STS4, I_STS5 -->
-  <div class="dashboard-grid">
+  <h2 class="section-title">🏗️ Grúas STS</h2>
+  <div id="sts" class="dashboard-grid">
     <div id="topic3-cell" class="metric-card">
       <!-- Icono Grúa Pórtico (STS1) -->
       <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21h20"></path><path d="M4 21l4-11l4 11"></path><path d="M8 10V4h14"></path><path d="M2 4h6"></path><path d="M18 4v11"></path><rect x="16" y="15" width="4" height="3"></rect></svg>
@@ -464,7 +509,7 @@
   <!-- Alertas -->
   <div id="alertContainer">⚠️ Alerta: Valor alto detectado!</div>
 
-  <div class="main-chart-wrapper">
+  <div id="consumo" class="main-chart-wrapper">
     <h2 class="chart-title">Monitor de Consumo en Tiempo Real</h2>
     <div class="chart-box-container">
       <div id="myChartLoader" class="loader" style="display: block; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); z-index: 10;"></div>
@@ -473,7 +518,7 @@
   </div>
   
   <!-- Contenedor para Gráfico y Tabla de Peaks -->
-  <div class="peaks-section-container">
+  <div id="peaks" class="peaks-section-container">
     <h2 class="chart-title">Historial de Eventos y Peaks</h2>
     <div class="peaks-inner-row">
     <!-- Lado Izquierdo: Gráfico -->
@@ -713,6 +758,6 @@
   <!-- Contenedor de Notificaciones -->
   <div id="toast-container"></div>
 
-<script src="script.js"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>
